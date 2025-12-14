@@ -1,0 +1,68 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Payment - TradeWise</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+        .payment-container {
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <h2>🔄 Processing Your Payment</h2>
+        <div class="loader"></div>
+        <p><strong>Service:</strong> {{ service }}</p>
+        <p><strong>Amount:</strong> KES {{ amount }}</p>
+        <p><strong>Email:</strong> {{ email }}</p>
+        <p>Redirecting to Paystack securely...</p>
+    </div>
+
+    <!-- SUBMIT FORM AUTOMATICALLY -->
+    <form id="paymentForm" method="POST" action="{% url 'initiate_payment' %}" style="display: none;">
+        {% csrf_token %}
+        <input type="hidden" name="email" value="{{ email }}">
+        <input type="hidden" name="amount" value="{{ amount }}">
+        <input type="hidden" name="service" value="{{ service }}">
+    </form>
+
+    <script>
+        // AUTO-SUBMIT THE FORM IMMEDIATELY
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Submitting payment form to Paystack...');
+            document.getElementById('paymentForm').submit();
+        });
+    </script>
+</body>
+</html>

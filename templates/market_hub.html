@@ -1,0 +1,786 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>TradeWise Market Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root {
+            --primary-blue: #3498db;
+            --dark-blue: #2c3e50;
+            --gradient-main: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            --gradient-reverse: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+            --light-bg: #f8fafc;
+            --dark-text: #1e293b;
+            --success-green: #10b981;
+            --error-red: #ef4444;
+            --warning-yellow: #f59e0b;
+            --purple: #8b5cf6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--light-bg); color: var(--dark-text); line-height: 1.6; overflow-x: hidden; }
+
+        .nav { background: var(--dark-blue); padding: 15px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: relative; z-index: 1000; }
+        .nav-logo { color:white; font-size:1.3rem; font-weight:700; text-decoration:none }
+        .nav-logo span { color: var(--primary-blue); }
+        .nav-link { color:white; text-decoration:none; font-weight:600; display:flex; gap:8px; align-items:center; font-size: 0.9rem; }
+
+        .classes-hero {
+            background: url('{% static "images/bullish-golden-1.jpg" %}') no-repeat center center/cover;
+            height: 40vh; display:flex; align-items:center; justify-content:center; position:relative; color:white; text-align:center; padding:0 20px;
+        }
+        .classes-hero::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.6); }
+        .hero-content { position:relative; z-index:2; max-width:800px; }
+        .hero-content h1 { font-size:2.2rem; margin-bottom:12px; font-weight:800; }
+        .cta-button { display:inline-block; background:var(--gradient-main); color:white; padding:12px 22px; border-radius:50px; text-decoration:none; font-weight:600; font-size: 0.9rem; }
+
+        .market-section { padding:40px 0; }
+        .container { max-width:1400px; margin:0 auto; padding:0 15px; }
+
+        .section-header { text-align:center; margin-bottom:30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .section-header h2 { font-size:2rem; color: var(--dark-blue); margin-bottom: 10px; }
+        .section-header p { color:#7f8c8d; font-size:1rem; }
+
+        .refresh-btn {
+            background: var(--success-green);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #0da271;
+            transform: translateY(-2px);
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* MARKET GRID LAYOUT */
+        .market-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        /* HORIZONTAL SOFTWARE CARD */
+        .software-row {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .software-card-horizontal {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            display: flex;
+            width: 100%;
+            max-width: 1000px;
+            min-height: 200px;
+        }
+
+        .software-card-horizontal:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .software-image {
+            width: 250px;
+            height: 200px;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .software-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .software-content {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* STANDARD CARD DESIGN - ALL SAME HEIGHT */
+        .market-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            height: 480px; /* Fixed height for consistency */
+        }
+
+        .market-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .market-card.loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 160px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .market-card:hover .card-image img {
+            transform: scale(1.05);
+        }
+
+        .card-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--gradient-main);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .card-badge.software {
+            background: var(--purple);
+        }
+
+        .card-content {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            margin-bottom: 12px;
+        }
+
+        .card-header h3 {
+            font-size: 1.2rem;
+            color: var(--dark-blue);
+            margin-bottom: 5px;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .card-subtitle {
+            color: #000000;
+            font-size: 0.85rem;
+        }
+
+        .card-description {
+            color: #000;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .btn {
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            flex: 1;
+            font-size: 0.85rem;
+            height: 40px;
+        }
+
+        .btn.primary {
+            background: var(--gradient-main);
+            color: white;
+        }
+
+        .btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn.secondary {
+            background: transparent;
+            color: var(--primary-blue);
+            border: 2px solid var(--primary-blue);
+        }
+
+        .btn.secondary:hover {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn.download {
+            background: var(--purple);
+            color: white;
+        }
+
+        .btn.download:hover {
+            background: #7c3aed;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn.info {
+            background: var(--success-green);
+            color: white;
+        }
+
+        .btn.info:hover {
+            background: #0da271;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Simple Payment Modal */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 25px 25px 0;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .modal-header h3 {
+            font-size: 1.4rem;
+            color: var(--dark-blue);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .modal-header p {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #f1f3f4;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: #666;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .modal-close:hover {
+            background: var(--error-red);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        .modal-content {
+            padding: 0 25px 25px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--dark-blue);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e6e6e6;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: #fff;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            background: var(--gradient-main);
+            color: white;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile-first responsive design */
+        @media (max-width: 768px) {
+            .nav { padding: 12px 15px; }
+            .nav-logo { font-size: 1.1rem; }
+            .nav-link { font-size: 0.8rem; }
+            
+            .classes-hero { height: 35vh; }
+            .hero-content h1 { font-size: 1.8rem; }
+            .cta-button { padding: 10px 20px; font-size: 0.85rem; }
+            
+            .market-section { padding: 30px 0; }
+            .section-header h2 { font-size: 1.6rem; }
+            .section-header p { font-size: 0.9rem; }
+            
+            .market-grid { 
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .market-card { 
+                height: 450px;
+                margin-bottom: 15px;
+            }
+            
+            .software-card-horizontal {
+                flex-direction: column;
+                min-height: auto;
+            }
+            
+            .software-image {
+                width: 100%;
+                height: 160px;
+            }
+            
+            .card-image { height: 140px; }
+            .card-content { padding: 15px; }
+            .card-header h3 { font-size: 1.1rem; }
+            
+            .modal-backdrop { padding: 10px; }
+            .modal-card { 
+                max-height: 85vh;
+                border-radius: 12px;
+            }
+            .modal-header { padding: 20px 20px 0; }
+            .modal-content { padding: 0 20px 20px; }
+            .modal-header h3 { font-size: 1.2rem; }
+            
+            .card-actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                padding: 12px 16px;
+                font-size: 0.9rem;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .refresh-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-content h1 { font-size: 1.5rem; }
+            .section-header h2 { font-size: 1.4rem; }
+            .market-card { height: 420px; }
+            .card-image { height: 120px; }
+        }
+
+        @media (min-width: 1200px) {
+            .market-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a class="nav-logo" href="{% url 'index' %}">Trade<span>Wise</span> Market Hub</a>
+        {% if user.is_authenticated %}
+        <a class="nav-link" href="{% url 'account' %}">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+        {% else %}
+        <a class="nav-link" href="{% url 'index' %}">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+        {% endif %}
+    </nav>
+
+    <section class="classes-hero">
+        <div class="hero-content">
+            <h1>TradeWise Market Hub</h1>
+            <p>Master the markets with our expert-led training programs and premium resources</p>
+            <a href="#market" class="cta-button">Explore Market Hub</a>
+        </div>
+    </section>
+
+    <!-- Modern Market Section -->
+    <div class="market-section" id="market">
+        <div class="container">
+            <div class="section-header">
+                <div style="flex: 1;">
+                    <h2>TradeWise <span style="color: var(--primary-blue);">Market Hub</span></h2>
+                    <p>Your comprehensive trading resource center</p>
+                </div>
+                <button class="refresh-btn">
+                    <i class="fas fa-sync-alt"></i> Refresh Data
+                </button>
+            </div>
+
+            <!-- Three Cards in One Row -->
+            <div class="market-grid">
+                <!-- ChartLab Card - ONLY Deriv & TradingView -->
+                <div class="market-card">
+                    <div class="card-image">
+                        <img src="https://images.crunchbase.com/image/upload/c_pad,f_auto,q_auto:eco,dpr_1/v1397180706/50284c9afc4916cea603910cef5f5a1e.jpg?ik-sanitizeSvg=true" alt="Chart Analysis">
+                        <div class="card-badge">Training</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-header">
+                            <h3>Chart Lab</h3>
+                            <div class="card-subtitle">Technical Analysis Training Ground</div>
+                        </div>
+                        <div class="card-description">
+                            Analyses and charts with guidance from seasoned traders. Learn how to spot patterns, trends, and profitable setups.
+                        </div>
+                        <div class="card-meta">
+                            <span>Free Access</span>
+                            <span style="font-weight: 600; color: var(--dark-blue);">Platform Links</span>
+                        </div>
+                        <div class="card-actions">
+                            <a href="https://hub.deriv.com/tradershub/signup?t=dlqa5n7DcVEzjAYmf6wqTGNd7ZgqdRLk&utm_source=affiliate_231539&utm_medium=affiliate&utm_campaign=MyAffiliates&utm_content=&referrer=127.0.0.1"
+                               class="btn primary" target="_blank">
+                                <i class="fas fa-chart-line"></i> Open Deriv
+                            </a>
+                            <a href="https://www.tradingview.com/"
+                               class="btn secondary" target="_blank">
+                                <i class="fas fa-chart-bar"></i> TradingView
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategies Card -->
+                <div class="market-card">
+                    <div class="card-image">
+                        <img src="https://media.b2broker.com/app/uploads/2024/04/10-best-day-trading-strategies-1500x852.png" alt="Trading Strategies">
+                        <div class="card-badge">Strategies</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-header">
+                            <h3>Trading Strategies</h3>
+                            <div class="card-subtitle">Proven Systems for Consistent Profits</div>
+                        </div>
+                        <div class="card-description">
+                            Access our library of 4,155+ proven trading strategies across Forex, Crypto, and Derivatives markets.
+                        </div>
+                        <div class="card-meta">
+                            <span>Lifetime Access</span>
+                            <span style="font-weight: 600; color: var(--dark-blue);">$50</span>
+                        </div>
+                        <div class="card-actions">
+                            <a href="{% url 'free_strategies' %}" class="btn secondary">
+                                <i class="fas fa-eye"></i> Free Preview
+                            </a>
+                            <button class="btn primary" onclick="showPaymentModal('Trading Strategies', 50)">
+                                <i class="fas fa-crown"></i> VIP Access
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signals Card -->
+                <div class="market-card">
+                    <div class="card-image">
+                        <img src="https://wp.tradingcup.com/wp-content/uploads/2025/04/How-to-Find-Forex-Trading-Signals-That-Actually-Work-in-2025-1024x559.jpg" alt="Premium Signals">
+                        <div class="card-badge">Signals</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-header">
+                            <h3>Premium Signals</h3>
+                            <div class="card-subtitle">Real-time Trading Opportunities</div>
+                        </div>
+                        <div class="card-description">
+                            Get real-time trading signals with 80% Forex accuracy and 60% Crypto accuracy from our expert analysts.
+                        </div>
+                        <div class="card-meta">
+                            <span>Monthly Access</span>
+                            <span style="font-weight: 600; color: var(--dark-blue);">$50</span>
+                        </div>
+                        <div class="card-actions">
+                            <a href="{% url 'free_signals' %}" class="btn secondary">
+                                <i class="fas fa-eye"></i> Free Preview
+                            </a>
+                            <button class="btn primary" onclick="showPaymentModal('Premium Signals', 50)">
+                                <i class="fas fa-crown"></i> VIP Access
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Horizontal Trading Software Card -->
+            <div class="software-row">
+                <div class="software-card-horizontal">
+                    <div class="software-image">
+                        <img src="https://liquidityfinder.com/_next/image?url=https%3A%2F%2Flfapi.liquidityfinder.com%2Fassets%2Fb52debce-979f-4f78-b71f-2cb2a3efb049&w=3840&q=75" alt="Trading Software & Bots">
+                        <div class="card-badge software">Software</div>
+                    </div>
+                    <div class="software-content">
+                        <div class="card-header">
+                            <h3>Trading Software & Bots</h3>
+                            <div class="card-subtitle">Automated Trading Solutions</div>
+                        </div>
+                        <div class="card-description">
+                            Advanced trading bots and software that automate your trading strategies. Features include backtesting, risk management, and real-time execution across multiple markets.
+                        </div>
+                        <div class="card-meta">
+                            <span>Lifetime License</span>
+                            <span style="font-weight: 600; color: var(--dark-blue);">$50</span>
+                        </div>
+                        <div class="card-actions">
+                            <a href="{% url 'free_software' %}" class="btn secondary" >
+                                <i class="fas fa-eye"></i> Free Preview
+                            </a>
+                            <button class="btn primary" onclick="showPaymentModal('Trading Software', 50)">
+                                <i class="fas fa-crown"></i> VIP Access
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Payment Modal -->
+    <div class="modal-backdrop" id="paymentModal">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+            <div class="modal-header">
+                <h3>Complete VIP Access</h3>
+                <p>Enter your email to proceed with secure payment</p>
+            </div>
+            <div class="modal-content">
+                <div class="form-group">
+                    <div style="background: var(--light-bg); border-radius: 10px; padding: 20px; margin-bottom: 20px; text-align: center;">
+                        <p style="margin: 0; font-size: 1.1rem; color: var(--dark-text); margin-bottom: 10px;">You're purchasing:</p>
+                        <p style="margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--dark-blue);" id="modalServiceName">VIP Package</p>
+                        <p style="margin: 5px 0 0; font-size: 1.1rem; color: var(--primary-blue);" id="modalAmountDisplay"></p>
+                    </div>
+                </div>
+
+                <form id="paymentForm" method="POST" action="{% url 'initialize_payment' %}">
+                    {% csrf_token %}
+                    <input type="hidden" id="service" name="plan_type" value="">
+                    <input type="hidden" id="amount" name="amount" value="">
+                    
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" class="form-control" id="email" name="email" required placeholder="your@email.com">
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="payButton">
+                        <i class="fas fa-lock"></i> Proceed to Secure Payment
+                    </button>
+                    
+                    <div style="text-align: center; margin-top: 15px;">
+                        <img src="data:image/png;base64,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" alt="Paystack Secure Payments" style="height: 20px; opacity: 0.7;">
+                        <p style="font-size: 0.8rem; color: #7f8c8d; margin-top: 8px;">
+                            Secured by Paystack • Bank-level encryption
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple Payment Modal Functions
+        function showPaymentModal(serviceName, amountUSD) {
+            const amountKES = Math.round(amountUSD * 156); // $50 × 156 = 7,800 KES
+            const amountInKobo = amountKES * 100; // Convert to kobo for Paystack (780,000)
+            
+            console.log('💰 AMOUNT CALCULATION:', {
+                'USD': amountUSD,
+                'KES': amountKES,
+                'Kobo': amountInKobo
+            });
+            
+            // Update modal content
+            document.getElementById('modalServiceName').textContent = serviceName;
+            document.getElementById('modalAmountDisplay').textContent = '$' + amountUSD + ' (≈ KES ' + amountKES.toLocaleString() + ')';
+            
+            // Set hidden form values
+            document.getElementById('service').value = serviceName;
+            document.getElementById('amount').value = amountKES; // Send KES amount (NOT kobo)
+            
+            // Show modal
+            document.getElementById('paymentModal').style.display = 'flex';
+        }
+    
+        function closePaymentModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+            document.getElementById('paymentForm').reset();
+        }
+    
+        // Form submission handler
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('payButton');
+            const email = document.getElementById('email').value;
+            const service = document.getElementById('service').value;
+            const amount = document.getElementById('amount').value;
+            
+            console.log('🔄 FORM SUBMISSION DATA:', {
+                email: email,
+                service: service,
+                amount: amount + ' KES',
+                amountInKobo: (amount * 100) + ' kobo'
+            });
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="spinner"></div> Processing...';
+        });
+    
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('paymentModal');
+            if (event.target === modal) {
+                closePaymentModal();
+            }
+        }
+    
+        // Refresh button functionality
+        document.querySelector('.refresh-btn').addEventListener('click', function() {
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Refreshing...';
+            
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

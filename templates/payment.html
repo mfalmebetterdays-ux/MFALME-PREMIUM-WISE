@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeWise Services & Payment Plans</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+            --border: #dee2e6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f8fafc;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            background: var(--secondary);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Services Section */
+        .services-section {
+            padding: 80px 0;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-title h2 {
+            font-size: 2.2rem;
+            color: var(--secondary);
+            margin-bottom: 10px;
+        }
+
+        .section-title p {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 1px solid var(--border);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .service-header {
+            background: var(--secondary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .service-header h3 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+
+        .service-header .service-desc {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .service-body {
+            padding: 25px;
+        }
+
+        .service-features {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .service-features li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f1f1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .service-features li:last-child {
+            border-bottom: none;
+        }
+
+        .service-features i {
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+
+        .price-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 5px;
+        }
+
+        .price-note {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .request-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 25px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .request-btn:hover {
+            background: #2980b9;
+        }
+
+        /* Enhanced Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-container {
+            background: white;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            background: var(--secondary);
+            color: white;
+            padding: 20px 25px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.8rem;
+            cursor: pointer;
+            line-height: 1;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+
+        .close-modal:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+
+        .modal-content {
+            padding: 25px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .selected-service {
+            background: #e8f4fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            text-align: center;
+            border-left: 4px solid var(--primary);
+        }
+
+        .selected-service h4 {
+            color: var(--secondary);
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+        }
+
+        .selected-service .price {
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin: 5px 0;
+        }
+
+        .selected-service p {
+            color: #666;
+            margin: 0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .submit-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .modal-footer {
+            padding: 0 25px 25px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .modal-note {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            line-height: 1.5;
+        }
+
+        /* Loading State */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Success Message */
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Responsive Enhancements */
+        @media (max-width: 768px) {
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .modal-container {
+                margin: 10px;
+                max-height: 95vh;
+            }
+            
+            .modal-content {
+                padding: 20px;
+            }
+            
+            .modal-header {
+                padding: 15px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .services-section {
+                padding: 50px 0;
+            }
+            
+            .modal-overlay {
+                padding: 10px;
+            }
+            
+            .modal-container {
+                border-radius: 10px;
+            }
+        }
+
+        /* Scrollbar styling for modal */
+        .modal-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background: #2980b9;
+        }
+        
+        /* NEW STYLES FOR PROGRESS BARS */
+        .progress-section {
+            margin: 20px 0;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .progress-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        .progress-percentage {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .progress-bar-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 12px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #2980b9);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-bar.completed {
+            background: linear-gradient(90deg, var(--success), #20c997);
+        }
+
+        .progress-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .progress-amount {
+            font-weight: 600;
+        }
+
+        .pay-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 25px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .pay-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .pay-btn.completed {
+            background: var(--success);
+        }
+
+        .pay-btn.completed:hover {
+            background: #20c997;
+        }
+
+        .payment-options {
+            margin-top: 15px;
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+        }
+
+        .payment-option-btn {
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: 6px;
+            padding: 10px 15px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .payment-option-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .payment-amount {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .payment-description {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">Trade<span>Wise</span> </div>
+                <a href="{% url 'account' %}" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Professional Trading Services</h1>
+            <p>Choose from our premium trading services and start your journey to financial success</p>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section class="services-section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Our Premium Services</h2>
+                <p>Select a service that matches your trading goals</p>
+            </div>
+
+            <!-- Display Django Messages -->
+            {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i> {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="services-grid">
+                <!-- Copy Trading -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>Copy Trading</h3>
+                        <p class="service-desc">Automate your trading success</p>
+                    </div>
+                    <div class="service-body">
+                        <ul class="service-features">
+                            <li><i class="fas fa-check"></i> Mirror expert traders automatically</li>
+                            <li><i class="fas fa-check"></i> Perfect for beginners</li>
+                            <li><i class="fas fa-check"></i> Real-time trade copying</li>
+                            <li><i class="fas fa-check"></i> Full control over your account</li>
+                            <li><i class="fas fa-check"></i> 24/7 monitoring</li>
+                        </ul>
+                        
+                        <!-- PROGRESS BAR SECTION -->
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">Payment Progress</span>
+                                <span class="progress-percentage" id="copyTradingPercentage">0%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="copyTradingProgress" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-details">
+                                <span class="progress-amount" id="copyTradingPaid">KES 0 paid</span>
+                                <span>KES 10,000 total</span>
+                            </div>
+                        </div>
+
+                        <button class="pay-btn" onclick="openPaymentModal('copy_trading', 10000)">
+                            <i class="fas fa-credit-card"></i> Make Payment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Trading -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>Live Trading Sessions</h3>
+                        <p class="service-desc">Learn from real market action</p>
+                    </div>
+                    <div class="service-body">
+                        <ul class="service-features">
+                            <li><i class="fas fa-check"></i> Real-time market analysis</li>
+                            <li><i class="fas fa-check"></i> Interactive Q&A sessions</li>
+                            <li><i class="fas fa-check"></i> Live trade execution</li>
+                            <li><i class="fas fa-check"></i> Strategy breakdowns</li>
+                            <li><i class="fas fa-check"></i> Recorded sessions access</li>
+                        </ul>
+                        
+                        <!-- PROGRESS BAR SECTION -->
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">Payment Progress</span>
+                                <span class="progress-percentage" id="liveTradingPercentage">0%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="liveTradingProgress" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-details">
+                                <span class="progress-amount" id="liveTradingPaid">KES 0 paid</span>
+                                <span>KES 10,000 total</span>
+                            </div>
+                        </div>
+
+                        <button class="pay-btn" onclick="openPaymentModal('live_trading', 10000)">
+                            <i class="fas fa-credit-card"></i> Make Payment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Trading Signals -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>Trading Signals</h3>
+                        <p class="service-desc">Professional trade alerts</p>
+                    </div>
+                    <div class="service-body">
+                        <ul class="service-features">
+                            <li><i class="fas fa-check"></i> Real-time trade signals</li>
+                            <li><i class="fas fa-check"></i> Multiple timeframes</li>
+                            <li><i class="fas fa-check"></i> Entry/Exit/Stop-loss levels</li>
+                            <li><i class="fas fa-check"></i> Risk management guidance</li>
+                            <li><i class="fas fa-check"></i> Telegram & Email alerts</li>
+                        </ul>
+                        
+                        <!-- PROGRESS BAR SECTION -->
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">Payment Progress</span>
+                                <span class="progress-percentage" id="signalsPercentage">0%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="signalsProgress" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-details">
+                                <span class="progress-amount" id="signalsPaid">KES 0 paid</span>
+                                <span>KES 13,000 total</span>
+                            </div>
+                        </div>
+
+                        <button class="pay-btn" onclick="openPaymentModal('trading_signals', 13000)">
+                            <i class="fas fa-credit-card"></i> Make Payment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 1-on-1 Consultation -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>1-on-1 Consultation</h3>
+                        <p class="service-desc">Personalized trading guidance</p>
+                    </div>
+                    <div class="service-body">
+                        <ul class="service-features">
+                            <li><i class="fas fa-check"></i> Personalized strategy development</li>
+                            <li><i class="fas fa-check"></i> Portfolio review</li>
+                            <li><i class="fas fa-check"></i> Risk assessment</li>
+                            <li><i class="fas fa-check"></i> Market analysis training</li>
+                            <li><i class="fas fa-check"></i> Ongoing support</li>
+                        </ul>
+                        <!-- PROGRESS BAR SECTION -->
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">Payment Progress</span>
+                                <span class="progress-percentage" id="consultationPercentage">0%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="consultationProgress" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-details">
+                                <span class="progress-amount" id="consultationPaid">KES 0 paid</span>
+                                <span>KES 15,000 total</span>
+                            </div>
+                        </div>
+                        
+                        <button class="pay-btn" onclick="openPaymentModal('consultation', 15000)">
+                            <i class="fas fa-credit-card"></i> Make Payment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Capital Funding -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>Capital Funding</h3>
+                        <p class="service-desc">Trade with our capital</p>
+                    </div>
+                    <div class="service-body">
+                        <ul class="service-features">
+                            <li><i class="fas fa-check"></i> Prove your trading strategy</li>
+                            <li><i class="fas fa-check"></i> Access larger capital</li>
+                            <li><i class="fas fa-check"></i> No personal risk</li>
+                            <li><i class="fas fa-check"></i> Performance-based scaling</li>
+                            <li><i class="fas fa-check"></i> Professional trader status</li>
+                        </ul>
+                        <!-- PROGRESS BAR SECTION -->
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">Payment Progress</span>
+                                <span class="progress-percentage" id="fundingPercentage">0%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="fundingProgress" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-details">
+                                <span class="progress-amount" id="fundingPaid">KES 0 paid</span>
+                                <span>KES 13,000 total</span>
+                            </div>
+                        </div>
+                        
+                        <button class="pay-btn" onclick="openPaymentModal('capital_funding', 13000)">
+                            <i class="fas fa-credit-card"></i> Make Payment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Advanced Course -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3>Advanced Trading Course</h3>
+                        <p class="service-desc">Master professional strategies</p>
+                    </div>
+                    <div class="service-body">
+                        <ul class="service-features">
+                            <li><i class="fas fa-check"></i> Advanced technical analysis</li>
+                            <li><i class="fas fa-check"></i> Risk management systems</li>
+                            <li><i class="fas fa-check"></i> Psychology of trading</li>
+                            <li><i class="fas fa-check"></i> Live trading examples</li>
+                            <li><i class="fas fa-check"></i> Certificate of completion</li>
+                        </ul>
+                        <!-- PROGRESS BAR SECTION -->
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">Payment Progress</span>
+                                <span class="progress-percentage" id="coursePercentage">0%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="courseProgress" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-details">
+                                <span class="progress-amount" id="coursePaid">KES 0 paid</span>
+                                <span>KES 20,000 total</span>
+                            </div>
+                        </div>
+                        
+                        <button class="pay-btn" onclick="openPaymentModal('advanced_course', 20000)">
+                            <i class="fas fa-credit-card"></i> Make Payment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Make Payment</h3>
+                <button class="close-modal" onclick="closePaymentModal()">&times;</button>
+            </div>
+            <div class="modal-content">
+                <div class="selected-service" id="selectedPaymentDisplay">
+                    <!-- Dynamic content -->
+                </div>
+                
+                <!-- UPDATED FORM ACTION TO USE DJANGO URL -->
+                <form id="paymentForm" method="POST" action="{% url 'initialize_service_payment' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="service_type" id="paymentServiceType">
+                    <input type="hidden" name="service_price" id="paymentServicePrice">
+                    <input type="hidden" name="payment_amount" id="paymentAmount">
+                    
+                    <!-- ADDED FORM FIELDS FOR USER DATA -->
+                    <div class="form-group">
+                        <label for="clientName" class="form-label">Full Name *</label>
+                        <input type="text" id="clientName" name="name" class="form-control" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="clientEmail" class="form-label">Email Address *</label>
+                        <input type="email" id="clientEmail" name="email" class="form-control" placeholder="Enter your email address" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="clientPhone" class="form-label">Phone Number *</label>
+                        <input type="tel" id="clientPhone" name="phone" class="form-control" placeholder="Enter your phone number" required>
+                    </div>
+
+                    <div class="payment-options">
+                        <h5>Select Payment Amount</h5>
+                        
+                        <button type="button" class="payment-option-btn" onclick="selectPaymentAmount(5000, 50)">
+                            <div class="payment-amount">KES 5,000</div>
+                            <div class="payment-description">50% of total</div>
+                        </button>
+                        
+                        <button type="button" class="payment-option-btn" onclick="selectPaymentAmount(7500, 75)">
+                            <div class="payment-amount">KES 7,500</div>
+                            <div class="payment-description">75% of total</div>
+                        </button>
+                        
+                        <button type="button" class="payment-option-btn" onclick="selectPaymentAmount(10000, 100)">
+                            <div class="payment-amount">KES 10,000</div>
+                            <div class="payment-description">Full payment</div>
+                        </button>
+                        
+                        <div class="form-group">
+                            <label for="customAmount" class="form-label">Or enter custom amount:</label>
+                            <input type="number" id="customAmount" name="custom_amount" class="form-control" 
+                                   placeholder="Enter amount in KES" min="1000" 
+                                   onchange="updateCustomAmount(this.value)">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn" id="submitPaymentButton">
+                        <i class="fas fa-credit-card"></i> Proceed to Paystack
+                    </button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <p class="modal-note">Secure payment processed by Paystack. You can pay in multiple installments.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentService = '';
+        let currentTotalPrice = 0;
+        let selectedPaymentAmount = 0;
+
+        // Load user's payment progress on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPaymentProgress();
+        });
+
+        function loadPaymentProgress() {
+            // For demo - using localStorage. In real app, this would come from Django context
+            const progressData = JSON.parse(localStorage.getItem('serviceProgress') || '{}');
+            
+            // Update each service's progress
+            updateServiceProgress('copy_trading', 10000, progressData['copy_trading'] || 0);
+            updateServiceProgress('live_trading', 10000, progressData['live_trading'] || 0);
+            updateServiceProgress('trading_signals', 13000, progressData['trading_signals'] || 0);
+            updateServiceProgress('consultation', 15000, progressData['consultation'] || 0);
+            updateServiceProgress('capital_funding', 13000, progressData['capital_funding'] || 0);
+            updateServiceProgress('advanced_course', 20000, progressData['advanced_course'] || 0);
+        }
+
+        function updateServiceProgress(serviceType, totalAmount, paidAmount) {
+            const percentage = (paidAmount / totalAmount) * 100;
+            let serviceId;
+            
+            // Map service types to their display IDs
+            switch(serviceType) {
+                case 'copy_trading':
+                    serviceId = 'copyTrading';
+                    break;
+                case 'live_trading':
+                    serviceId = 'liveTrading';
+                    break;
+                case 'trading_signals':
+                    serviceId = 'signals';
+                    break;
+                case 'consultation':
+                    serviceId = 'consultation';
+                    break;
+                case 'capital_funding':
+                    serviceId = 'funding';
+                    break;
+                case 'advanced_course':
+                    serviceId = 'course';
+                    break;
+                default:
+                    serviceId = serviceType;
+            }
+            
+            const progressBar = document.getElementById(serviceId + 'Progress');
+            const percentageText = document.getElementById(serviceId + 'Percentage');
+            const paidText = document.getElementById(serviceId + 'Paid');
+            
+            if (progressBar && percentageText && paidText) {
+                progressBar.style.width = percentage + '%';
+                percentageText.textContent = Math.round(percentage) + '%';
+                paidText.textContent = 'KES ' + paidAmount + ' paid';
+                
+                // Change color when completed
+                if (percentage >= 100) {
+                    progressBar.classList.add('completed');
+                }
+            }
+        }
+
+        function openPaymentModal(serviceType, totalPrice) {
+            currentService = serviceType;
+            currentTotalPrice = totalPrice;
+            selectedPaymentAmount = 0;
+            
+            // Get display name for the service
+            const serviceNames = {
+                'copy_trading': 'Copy Trading',
+                'live_trading': 'Live Trading Sessions',
+                'trading_signals': 'Trading Signals',
+                'consultation': '1-on-1 Consultation',
+                'capital_funding': 'Capital Funding',
+                'advanced_course': 'Advanced Trading Course'
+            };
+            
+            const displayName = serviceNames[serviceType] || serviceType;
+            
+            document.getElementById('selectedPaymentDisplay').innerHTML = `
+                <h4>${displayName}</h4>
+                <div class="price">KES ${totalPrice.toLocaleString()}</div>
+                <p>Pay in installments - track your progress</p>
+            `;
+            
+            document.getElementById('paymentServiceType').value = serviceType;
+            document.getElementById('paymentServicePrice').value = totalPrice;
+            document.getElementById('customAmount').value = '';
+            
+            document.getElementById('paymentModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            document.getElementById('paymentForm').reset();
+            selectedPaymentAmount = 0;
+        }
+
+        function selectPaymentAmount(amount, percentage) {
+            selectedPaymentAmount = amount;
+            document.getElementById('paymentAmount').value = amount;
+            
+            // Update UI to show selection
+            const buttons = document.querySelectorAll('.payment-option-btn');
+            buttons.forEach(btn => {
+                btn.style.background = 'white';
+                btn.style.color = 'var(--primary)';
+            });
+            
+            event.target.style.background = 'var(--primary)';
+            event.target.style.color = 'white';
+            
+            // Clear custom amount
+            document.getElementById('customAmount').value = '';
+        }
+
+        function updateCustomAmount(amount) {
+            if (amount && amount >= 1000) {
+                selectedPaymentAmount = parseInt(amount);
+                document.getElementById('paymentAmount').value = amount;
+                
+                // Clear button selections
+                const buttons = document.querySelectorAll('.payment-option-btn');
+                buttons.forEach(btn => {
+                    btn.style.background = 'white';
+                    btn.style.color = 'var(--primary)';
+                });
+            }
+        }
+
+        // Form submission - let Django handle the actual payment processing
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            if (selectedPaymentAmount === 0) {
+                e.preventDefault();
+                alert('Please select a payment amount');
+                return;
+            }
+            
+            const submitBtn = document.getElementById('submitPaymentButton');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting to Paystack...';
+            submitBtn.disabled = true;
+            
+            // Let the form submit naturally to Django
+            // Django will handle Paystack integration and redirect
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('paymentModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closePaymentModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closePaymentModal();
+            }
+        });
+
+        // Auto-hide success messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const successMessages = document.querySelectorAll('.success-message');
+            successMessages.forEach(message => {
+                setTimeout(() => {
+                    message.style.display = 'none';
+                }, 5000);
+            });
+        });
+    </script>
+</body>
+</html>
