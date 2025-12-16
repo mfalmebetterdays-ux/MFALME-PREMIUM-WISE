@@ -45,6 +45,7 @@ ALLOWED_HOSTS = [
     "www.tradewise-hub.com",
     ".railway.app",
     ".onrender.com",
+    "mfalme-premium-wise-production.up.railway.app",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -53,6 +54,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://tradewise-hub.com",
     "https://www.tradewise-hub.com",
     "https://*.onrender.com",
+    "https://mfalme-premium-wise-production.up.railway.app/",
 ]
 
 # ==============================

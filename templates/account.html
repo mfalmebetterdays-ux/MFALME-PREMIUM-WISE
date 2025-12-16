@@ -680,7 +680,7 @@
 
 
 
-         <!-- Affiliates Section - Updated with Total Coins Display -->
+      <!-- Affiliates Section - Updated with Total Coins Display -->
 <section id="affiliates" style="padding: 80px 0; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
     <div class="container">
         <div class="row justify-content-center mb-5">
@@ -705,7 +705,7 @@
                     <div class="referral-link-container mb-4">
                         <div class="input-group">
                             <input type="text" class="form-control" id="referralLink" 
-                            value="https://www.tradewise-hub.com/signup?ref={{ referral_code|default:'TW' }}"
+                            value="http://127.0.0.1:8000//signup?ref={{ referral_code|default:'TW' }}"
                                    readonly style="border-radius: 8px 0 0 8px; border: 2px solid #e2e8f0; font-family: 'Courier New', monospace;">
                             <button class="btn btn-primary" onclick="copyReferralLink()" 
                                     style="border-radius: 0 8px 8px 0; background: #3498db; border: 2px solid #3498db; font-weight: 600;">
@@ -1782,7 +1782,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="col-md-6">
                         <div class="footer-copyright-text text-center text-md-end">
                             <p style="color: #3498db; margin: 0; font-weight: 500; font-size: 0.9rem;">
-                                Copyright © <span id="footer-year">2024</span> TradeWise. All Rights Reserved.
+                                Copyright © <span id="footer-year">2025</span> TradeWise. All Rights Reserved.
                             </p>
                         </div>
                     </div>
@@ -1819,13 +1819,13 @@ document.addEventListener('DOMContentLoaded', function() {
         function calculatePayout() {
             const coinAmount = document.getElementById('coinAmount').value;
             const estimatedPayout = document.getElementById('estimatedPayout');
-            const payoutAmount = coinAmount * 10; // 10 Ksh per coin
+            const payoutAmount = coinAmount * 1; // 10 Ksh per coin
             estimatedPayout.textContent = payoutAmount + ' Ksh';
         }
 
         function updateCashEquivalent() {
             const totalCoins = parseInt(document.getElementById('currentBalance').textContent) || 0;
-            const cashValue = totalCoins * 10; // 10 Ksh per coin
+            const cashValue = totalCoins * 1; // 10 Ksh per coin
             document.getElementById('cashValue').textContent = cashValue;
         }
 
