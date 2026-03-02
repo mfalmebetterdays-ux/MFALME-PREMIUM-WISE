@@ -676,251 +676,13 @@ def add_manual_payment(request, payment_id):
         return JsonResponse({'success': False, 'error': 'Payment not found'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
-# ================== UPDATED ADMIN DASHBOARD ==================
-@admin_required
-def admin_dashboard(request):
-    """Admin dashboard with SIMPLE data"""
-    
-def test_coin_action_page(request):
-    """Simple test page for coin actions"""
-    return HttpResponse("""
-    <!DOCTYPE html>
-    <html>
-    <head><title>Coin Action Test</title></head>
-    <body style="padding: 20px; font-family: Arial;">
-        <h1>🪙 Coin Action Test Page</h1>
-        
-        <div style="background: #f0f0f0; padding: 20px; margin: 20px 0; border-radius: 10px;">
-            <h3>Test Form</h3>
-            <form method="POST" action="/admin-dashboard/">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="test_action">
-                <input type="hidden" name="test_from" value="test_page">
-                <button type="submit" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px;">
-                    Test Submit
-                </button>
-            </form>
-        </div>
-        
-        <div style="background: #e0ffe0; padding: 20px; margin: 20px 0; border-radius: 10px;">
-            <h3>Debug Info:</h3>
-            <pre>
-            Path: {{ request.path }}
-            Method: {{ request.method }}
-            CSRF Token: {{ csrf_token }}
-            </pre>
-        </div>
-        
-        <a href="/admin-dashboard/" style="color: #666;">← Back to Admin</a>
-    </body>
-    </html>
-    """)
-    
-    # 🎯 CRITICAL FIX: CHECK FOR POST FIRST BEFORE ANYTHING ELSE
-    if request.method == 'POST':
-        print("🎯 POST REQUEST DETECTED!")
-        print(f"🎯 PATH: {request.path}")
-        print(f"🎯 POST DATA: {dict(request.POST)}")
-        print(f"🎯 ACTION: {request.POST.get('action')}")
-        return handle_admin_form_submission(request)
-    
-    # ================== ORIGINAL GET LOGIC BELOW ==================
-    try:
-        # Get basic counts for dashboard
-        total_users = Tradeviewusers.objects.count()
-        new_users_today = Tradeviewusers.objects.filter(
-            created_at__date=timezone.now().date()
-        ).count()
-        
-        # Calculate total revenue from successful payments
-        payment_revenue = Payment.objects.filter(status='success').aggregate(
-            total=Sum('amount')
-        )['total'] or 0
-        
-        # ADD SERVICE REQUEST REVENUE CALCULATION
-        service_revenue = 0
-        # Service prices (in KES)
-        SERVICE_PRICES = {
-            'copy_trading': 10000.00,
-            'live_trading': 5000.00,
-            'capital_funding': 10000.00,
-            'general': 0.00
-        }
 
-        
-        # Calculate revenue from all service requests
-        service_requests = ServiceRequest.objects.all()
-        for req in service_requests:
-            service_revenue += SERVICE_PRICES.get(req.service_type, 0.00)
-        
-        # TOTAL REVENUE = Payments + Service Requests
-        total_revenue = float(payment_revenue) + float(service_revenue)
-        
-        # Count pending service requests
-        pending_requests_count = ServiceRequest.objects.filter(status='pending').count()
-        
-        # Active traders (users with recent activity)
-        active_traders = Tradeviewusers.objects.filter(
-            last_login__gte=timezone.now() - timedelta(days=30)
-        ).count()
-        
-        # Add software tools to context
-        software_list = SoftwareTool.objects.all().order_by('-created_at')
-        active_software_count = SoftwareTool.objects.filter(is_active=True).count()
-        total_downloads = SoftwareTool.objects.aggregate(total=Sum('download_count'))['total'] or 0
-        software_types_count = SoftwareTool.objects.values('file_type').distinct().count()
 
-        # ================== NEW REFERRAL MANAGEMENT DATA ==================
-        pending_referrals_list = Referral.objects.filter(status='pending').select_related('affiliate__user', 'referred_user').order_by('-created_at')
-        approved_referrals_count = Referral.objects.filter(status='approved').count()
-        total_pending_coins = pending_referrals_list.count() * 50
-        
-        # Affiliate debug data
-        affiliate_debug = {
-            'pending_referrals': pending_referrals_list.count(),
-            'approved_referrals': approved_referrals_count,
-            'total_coins_awarded': Referral.objects.filter(status='approved').aggregate(Sum('coins_awarded'))['coins_awarded__sum'] or 0,
-            'total_coin_balance': Affiliate.objects.aggregate(Sum('coin_balance'))['coin_balance__sum'] or 0,
-        }
-
-        # ================== NEW COIN TRANSACTION DATA ==================
-        # Get pending coin transactions (buy/sell requests)
-        pending_coin_transactions = CoinTransaction.objects.filter(
-            status__in=['pending', 'processing']
-        ).order_by('-created_at')[:10]  # Last 10 pending transactions
-        
-        # Get recent completed coin transactions
-        recent_coin_transactions = CoinTransaction.objects.filter(
-            status='completed'
-        ).order_by('-created_at')[:10]  # Last 10 completed transactions
-        
-        # Get TradeWise Coin settings
-        tradewise_coin = TradeWiseCoin.objects.first()
-        if not tradewise_coin:
-            # Create default if doesn't exist
-            tradewise_coin = TradeWiseCoin.objects.create(
-                title="TradeWise Coin",
-                buy_price_usd=0.10,
-                sell_price_usd=0.09,
-                description="The future of decentralized trading is here.",
-                price="$0.10 per TWC (Limited Supply)",
-                bonus_text="Early investors get +15% bonus tokens in the first round."
-            )
-
-        # Get all data for the dashboard
-        context = {
-            # Statistics
-            'total_users': total_users,
-            'new_users_today': new_users_today,
-            'total_revenue': total_revenue,  # Now includes service request value
-            'pending_requests_count': pending_requests_count,
-            'active_traders': active_traders,
-            
-            # Content data
-            'strategies': TradingStrategy.objects.all(),
-            'signals': TradingSignal.objects.all(),
-            
-            'services': Service.objects.all(),
-            'blog_posts': BlogPost.objects.all(),
-            'tradewise_card': TradeWiseCard.objects.first(),
-            'featured_merchandise': Merchandise.objects.all(),
-            'merchandise_list': Merchandise.objects.all(),
-            'tradewise_coin': tradewise_coin,  # Using the fetched/created instance
-            'reviews': Review.objects.all(),
-            'all_requests': ServiceRequest.objects.all().order_by('-created_at'),  # KEEP ORIGINAL NAME
-            'users': Tradeviewusers.objects.all().order_by('-created_at'),
-            
-            # Software data
-            'software_list': software_list,
-            'active_software_count': active_software_count,
-            'total_downloads': total_downloads,
-            'software_types_count': software_types_count,
-
-            # Affiliate data
-            'total_affiliates': Affiliate.objects.count(),
-            'pending_payouts_count': PayoutRequest.objects.filter(status='pending').count(),
-            'all_affiliates': Affiliate.objects.select_related('user').all(),
-            'pending_payouts': PayoutRequest.objects.filter(status='pending').select_related('user'),
-            'current_weekly_number': WeeklyNumber.objects.filter(is_active=True).first(),
-            'previous_numbers': WeeklyNumber.objects.filter(is_active=False).order_by('-created_at')[:5],
-            
-            # ================== NEW REFERRAL MANAGEMENT DATA ==================
-            'pending_referrals_list': pending_referrals_list,
-            'approved_referrals_count': approved_referrals_count,
-            'total_pending_coins': total_pending_coins,
-            'affiliate_debug': affiliate_debug,
-            
-            # ================== NEW COIN TRANSACTION DATA ==================
-            'pending_coin_transactions': pending_coin_transactions,
-            'recent_coin_transactions': recent_coin_transactions,
-            
-            # Current admin info
-            'current_admin': {
-                'username': request.session.get('admin_username', 'Admin'),
-                'number': request.session.get('admin_number', '500100')
-            },
-            
-            # Chart data (simplified)
-            'revenue_chart_data': get_revenue_chart_data(),
-            'service_distribution_data': get_service_distribution_data(),
-        }
-
-        # SIMPLE SERVICE PAYMENT DATA
-        all_service_payments = ServicePayment.objects.all().order_by('-created_at')
-        completed_payments = all_service_payments.filter(status='completed')
-        
-        context.update({
-            'all_service_payments': all_service_payments,
-            'completed_payments': completed_payments,
-        })
-        
-        print(f"🔍 ADMIN DASHBOARD DEBUG:")
-        print(f"   - Total Revenue: KES {total_revenue} (Payments: {payment_revenue}, Services: {service_revenue})")
-        print(f"   - Service Requests: {service_requests.count()} requests worth KES {service_revenue}")
-        print(f"   - Pending Referrals: {pending_referrals_list.count()}")
-        print(f"   - Approved Referrals: {approved_referrals_count}")
-        print(f"   - Total Pending Coins: {total_pending_coins}")
-        print(f"   - Affiliate Debug: {affiliate_debug}")
-        print(f"   - Pending Coin Transactions: {pending_coin_transactions.count()}")
-        print(f"   - Recent Coin Transactions: {recent_coin_transactions.count()}")
-        print(f"   - Coin Prices: Buy=${tradewise_coin.buy_price_usd}, Sell=${tradewise_coin.sell_price_usd}")
-        
-    except Exception as e:
-        # If there are any database issues, provide empty context
-        print(f"❌ Dashboard error: {e}")
-        import traceback
-        traceback.print_exc()
-        context = {
-            'total_users': 0,
-            'new_users_today': 0,
-            'total_revenue': 0,
-            'pending_requests_count': 0,
-            'active_traders': 0,
-            'current_admin': {'username': 'Admin'},
-            # Empty referral data
-            'pending_referrals_list': [],
-            'approved_referrals_count': 0,
-            'total_pending_coins': 0,
-            'affiliate_debug': {
-                'pending_referrals': 0,
-                'approved_referrals': 0,
-                'total_coins_awarded': 0,
-                'total_coin_balance': 0,
-            },
-            # Empty coin transaction data
-            'pending_coin_transactions': [],
-            'recent_coin_transactions': [],
-            'tradewise_coin': None,
-        }
-    
-    # OLD POST HANDLING REMOVED - Now at the top of function
-    
-    return render(request, 'admin_dashboard.html', context)
 
 # ================== UPDATED ADMIN DASHBOARD ==================
 @admin_required
 def admin_dashboard(request):
-    """Admin dashboard with SIMPLE data"""
+    """Admin dashboard with search functionality"""
     
     # 🎯 CRITICAL FIX: CHECK FOR POST FIRST BEFORE ANYTHING ELSE
     if request.method == 'POST':
@@ -928,14 +690,52 @@ def admin_dashboard(request):
         print(f"📋 POST DATA: {dict(request.POST)}")
         return handle_admin_form_submission(request)
     
-    # ================== ORIGINAL GET LOGIC BELOW ==================
+    # ================== ORIGINAL GET LOGIC ==================
     try:
-        # Get basic counts for dashboard
-        total_users = Tradeviewusers.objects.count()
-        new_users_today = Tradeviewusers.objects.filter(
-            created_at__date=timezone.now().date()
-        ).count()
+        # ================== SEARCH AND FILTER LOGIC ==================
+        search_query = request.GET.get('search', '').strip()
+        active_filter = request.GET.get('filter', '')
+        page = request.GET.get('page', 1)
         
+        # Base queryset for users
+        users_queryset = Tradeviewusers.objects.all().order_by('-created_at')
+        
+        # Apply search filter if exists
+        if search_query:
+            users_queryset = users_queryset.filter(
+                Q(account_number__icontains=search_query) |
+                Q(first_name__icontains=search_query) |
+                Q(second_name__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(phone__icontains=search_query)
+            )
+        
+        # Apply status filter
+        if active_filter == 'active':
+            users_queryset = users_queryset.filter(is_active=True)
+        elif active_filter == 'inactive':
+            users_queryset = users_queryset.filter(is_active=False)
+        elif active_filter == 'today':
+            today = timezone.now().date()
+            users_queryset = users_queryset.filter(created_at__date=today)
+        
+        # Get counts for filters
+        total_users = Tradeviewusers.objects.count()
+        active_users_count = Tradeviewusers.objects.filter(is_active=True).count()
+        inactive_users_count = Tradeviewusers.objects.filter(is_active=False).count()
+        new_users_today = Tradeviewusers.objects.filter(created_at__date=timezone.now().date()).count()
+        filtered_users_count = users_queryset.count()
+        
+        # Pagination
+        paginator = Paginator(users_queryset, 20)  # 20 users per page
+        try:
+            users = paginator.page(page)
+        except PageNotAnInteger:
+            users = paginator.page(1)
+        except EmptyPage:
+            users = paginator.page(paginator.num_pages)
+        
+        # ================== ORIGINAL DASHBOARD CALCULATIONS ==================
         # Calculate total revenue from successful payments
         payment_revenue = Payment.objects.filter(status='success').aggregate(
             total=Sum('amount')
@@ -950,9 +750,6 @@ def admin_dashboard(request):
             'capital_funding': 10000.00,
             'general': 0.00
         }
-
-        
-
         
         # Calculate revenue from all service requests
         service_requests = ServiceRequest.objects.all()
@@ -1000,9 +797,11 @@ def admin_dashboard(request):
             status='completed'
         ).order_by('-created_at')[:10]  # Last 10 completed transactions
         
-        # Get TradeWise Coin settings
+        # Get TradeWise Coin settings - WITH FORCE REFRESH
         tradewise_coin = TradeWiseCoin.objects.first()
-        if not tradewise_coin:
+        if tradewise_coin:
+            tradewise_coin.refresh_from_db()
+        else:
             # Create default if doesn't exist
             tradewise_coin = TradeWiseCoin.objects.create(
                 title="TradeWise Coin",
@@ -1013,7 +812,7 @@ def admin_dashboard(request):
                 bonus_text="Early investors get +15% bonus tokens in the first round."
             )
 
-        # Get all data for the dashboard
+        # ================== BUILD CONTEXT ==================
         context = {
             # Statistics
             'total_users': total_users,
@@ -1022,10 +821,17 @@ def admin_dashboard(request):
             'pending_requests_count': pending_requests_count,
             'active_traders': active_traders,
             
+            # Search and filter data
+            'search_query': search_query,
+            'active_filter': active_filter,
+            'users': users,  # Paginated users
+            'filtered_users_count': filtered_users_count,
+            'active_users_count': active_users_count,
+            'inactive_users_count': inactive_users_count,
+            
             # Content data
             'strategies': TradingStrategy.objects.all(),
             'signals': TradingSignal.objects.all(),
-            
             'services': Service.objects.all(),
             'blog_posts': BlogPost.objects.all(),
             'tradewise_card': TradeWiseCard.objects.first(),
@@ -1034,7 +840,6 @@ def admin_dashboard(request):
             'tradewise_coin': tradewise_coin,  # Using the fetched/created instance
             'reviews': Review.objects.all(),
             'all_requests': ServiceRequest.objects.all().order_by('-created_at'),  # KEEP ORIGINAL NAME
-            'users': Tradeviewusers.objects.all().order_by('-created_at'),
             
             # Software data
             'software_list': software_list,
@@ -1083,6 +888,9 @@ def admin_dashboard(request):
         print(f"🔍 ADMIN DASHBOARD DEBUG:")
         print(f"   - Total Revenue: KES {total_revenue} (Payments: {payment_revenue}, Services: {service_revenue})")
         print(f"   - Service Requests: {service_requests.count()} requests worth KES {service_revenue}")
+        print(f"   - Search Query: '{search_query}'")
+        print(f"   - Filter: '{active_filter}'")
+        print(f"   - Users Found: {filtered_users_count}")
         print(f"   - Pending Referrals: {pending_referrals_list.count()}")
         print(f"   - Approved Referrals: {approved_referrals_count}")
         print(f"   - Total Pending Coins: {total_pending_coins}")
@@ -1103,6 +911,12 @@ def admin_dashboard(request):
             'pending_requests_count': 0,
             'active_traders': 0,
             'current_admin': {'username': 'Admin'},
+            'search_query': '',
+            'active_filter': '',
+            'users': [],
+            'filtered_users_count': 0,
+            'active_users_count': 0,
+            'inactive_users_count': 0,
             # Empty referral data
             'pending_referrals_list': [],
             'approved_referrals_count': 0,
@@ -1118,8 +932,6 @@ def admin_dashboard(request):
             'recent_coin_transactions': [],
             'tradewise_coin': None,
         }
-    
-    # OLD POST HANDLING REMOVED - Now at the top of function
     
     return render(request, 'admin_dashboard.html', context)
 
@@ -1155,43 +967,6 @@ def handle_admin_form_submission(request):
         messages.success(request, '✅ TEST SUCCESSFUL! Handler is working!')
         return redirect('admin_dashboard')
     
-    # ================== SIMPLE REFERRAL COINS UPDATE ==================
-    if action == 'update_referral_coins':
-        print("🔄 Processing: update_referral_coins")
-        try:
-            # Get the new coin amount
-            new_coin_amount = int(request.POST.get('coins_per_referral', 50))
-            
-            # Validate
-            if new_coin_amount < 1:
-                messages.error(request, 'Coin amount must be at least 1.')
-                return redirect('admin_dashboard')
-            
-            if new_coin_amount > 10000:  # Reasonable limit
-                messages.error(request, 'Coin amount is too high. Maximum is 10,000.')
-                return redirect('admin_dashboard')
-            
-            # Update or create the setting
-            setting, created = ReferralCoinSetting.objects.get_or_create(
-                id=1,  # We'll just use one record
-                defaults={'coins_per_referral': new_coin_amount}
-            )
-            
-            if not created:
-                setting.coins_per_referral = new_coin_amount
-                setting.save()
-            
-            print(f"✅ REFERRAL COINS UPDATED: {new_coin_amount} coins per referral")
-            messages.success(request, f'✅ Referral coins updated! Now awarding {new_coin_amount} coins per referral.')
-            
-        except ValueError:
-            messages.error(request, 'Invalid coin amount. Please enter a number.')
-        except Exception as e:
-            messages.error(request, f'Error updating referral coins: {str(e)}')
-            print(f"❌ Referral coins update error: {str(e)}")
-        
-        return redirect('admin_dashboard')
-    
     # ================== COIN TRANSACTION HANDLERS ==================
     if action == 'update_coin':
         print("🔄 Processing: update_coin")
@@ -1200,17 +975,32 @@ def handle_admin_form_submission(request):
             if not coin:
                 coin = TradeWiseCoin.objects.create(
                     title="TradeWise Coin",
-                    buy_price_usd=0.10,
-                    sell_price_usd=0.09
+                    buy_price_usd=Decimal('0.10'),
+                    sell_price_usd=Decimal('0.09')
                 )
+            
+            print(f"🔄 Updating coin: Existing buy=${coin.buy_price_usd}, sell=${coin.sell_price_usd}")
             
             # Update fields
             coin.title = request.POST.get('title', coin.title)
             coin.subtitle = request.POST.get('subtitle', coin.subtitle)
             coin.description = request.POST.get('description', coin.description)
             coin.bonus_text = request.POST.get('bonus_text', coin.bonus_text)
-            coin.buy_price_usd = Decimal(request.POST.get('buy_price_usd', '0.10'))
-            coin.sell_price_usd = Decimal(request.POST.get('sell_price_usd', '0.09'))
+            
+            # Update prices - FIXED: Use Decimal
+            try:
+                buy_price = Decimal(request.POST.get('buy_price_usd', '0.10'))
+                sell_price = Decimal(request.POST.get('sell_price_usd', '0.09'))
+                
+                coin.buy_price_usd = buy_price
+                coin.sell_price_usd = sell_price
+                
+                print(f"💰 New prices: Buy=${buy_price}, Sell=${sell_price}")
+            except Exception as e:
+                print(f"❌ Price conversion error: {e}")
+                messages.error(request, f'Invalid price format: {e}')
+                return redirect('admin_dashboard')
+            
             coin.is_active = request.POST.get('is_active') == 'on'
             
             if 'image' in request.FILES:
@@ -1218,12 +1008,19 @@ def handle_admin_form_submission(request):
             
             coin.save()
             
+            # VERIFY SAVE
+            coin.refresh_from_db()
+            print(f"✅ Coin updated successfully! Verification:")
+            print(f"   Buy price: ${coin.buy_price_usd}")
+            print(f"   Sell price: ${coin.sell_price_usd}")
+            
             messages.success(request, '✅ TradeWise Coin settings updated successfully!')
-            print(f"✅ Coin updated: Buy=${coin.buy_price_usd}, Sell=${coin.sell_price_usd}")
             
         except Exception as e:
             messages.error(request, f'Error updating coin: {str(e)}')
             print(f"❌ Coin update error: {str(e)}")
+            import traceback
+            traceback.print_exc()
         
         return redirect('admin_dashboard')
     
@@ -1628,47 +1425,64 @@ def debug_admin_actions(request):
         <button type="submit">Test Approve Buy</button>
     </form>
     """)
-
 def update_tradewise_coin(request):
-    """Update TradeWise coin settings"""
-    try:
-        coin, created = TradeWiseCoin.objects.get_or_create(pk=1)
-        
-        # Update basic fields
-        coin.title = request.POST.get('title', 'TradeWise Coin')
-        coin.subtitle = request.POST.get('subtitle', '')
-        coin.description = request.POST.get('description', '')
-        coin.bonus_text = request.POST.get('bonus_text', 'Early investors get +15% bonus tokens in the first round.')
-        
-        # Update prices
-        buy_price = request.POST.get('buy_price_usd', '0.10')
-        sell_price = request.POST.get('sell_price_usd', '0.09')
-        
-        coin.buy_price_usd = Decimal(buy_price)
-        coin.sell_price_usd = Decimal(sell_price)
-        
-        coin.is_active = request.POST.get('is_active') == 'on'
-        
-        # Handle image upload
-        if 'image' in request.FILES:
-            coin.image = request.FILES['image']
-        
-        coin.save()
-        
-        # Log action
-        create_admin_log(
-            request,
-            f'Updated TradeWise Coin settings',
-            f"Buy: ${coin.buy_price_usd}, Sell: ${coin.sell_price_usd}"
-        )
-        
-        messages.success(request, '✅ TradeWise Coin settings updated successfully!')
-        
-    except Exception as e:
-        messages.error(request, f'Error updating coin settings: {str(e)}')
+    """Update TradeWise coin settings - SIMPLIFIED"""
+    print("🎯 UPDATE COIN CALLED!")
     
+    if request.method == 'POST':
+        try:
+            # Get or create coin
+            coin = TradeWiseCoin.objects.first()
+            if not coin:
+                coin = TradeWiseCoin.objects.create(
+                    title="TradeWise Coin",
+                    buy_price_usd=0.10,
+                    sell_price_usd=0.09
+                )
+            
+            print(f"🔄 Updating coin: Existing buy=${coin.buy_price_usd}, sell=${coin.sell_price_usd}")
+            
+            # Update fields
+            coin.title = request.POST.get('title', coin.title)
+            coin.subtitle = request.POST.get('subtitle', coin.subtitle)
+            coin.description = request.POST.get('description', coin.description)
+            coin.bonus_text = request.POST.get('bonus_text', coin.bonus_text)
+            
+            # Update prices
+            try:
+                buy_price = Decimal(request.POST.get('buy_price_usd', '0.10'))
+                sell_price = Decimal(request.POST.get('sell_price_usd', '0.09'))
+                
+                coin.buy_price_usd = buy_price
+                coin.sell_price_usd = sell_price
+                
+                print(f"💰 New prices: Buy=${buy_price}, Sell=${sell_price}")
+            except Exception as e:
+                print(f"❌ Price conversion error: {e}")
+                messages.error(request, f'Invalid price format: {e}')
+                return redirect('admin_dashboard')
+            
+            coin.is_active = request.POST.get('is_active') == 'on'
+            
+            # Handle image upload
+            if 'image' in request.FILES:
+                coin.image = request.FILES['image']
+            
+            coin.save()
+            
+            messages.success(request, '✅ TradeWise Coin settings updated successfully!')
+            print(f"✅ Coin updated successfully!")
+            
+        except Exception as e:
+            messages.error(request, f'Error updating coin: {str(e)}')
+            print(f"❌ Coin update error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+        
+        return redirect('admin_dashboard')
+    
+    # If GET request, just redirect
     return redirect('admin_dashboard')
-
 
 
 def debug_coin_actions(request):
@@ -2543,9 +2357,8 @@ def track_download_traditional(request):
     
 
 # ================== WEBSITE FRONTEND VIEWS ==================
-
 def index(request):
-    """Homepage with all dynamic content - ULTRA DEBUG VERSION"""
+    """Homepage with all dynamic content - ULTRA DEBUG VERSION WITH FIX"""
     print("🚀 ULTRA DEBUG: Index view started")
     
     try:
@@ -2578,6 +2391,66 @@ def index(request):
             print(f"   Category: {first_item.category}")
             print(f"   Image: {first_item.image}")
 
+        # DEBUG 5: TRADEWISE COIN CHECK - FIXED WITH CACHE CLEAR
+        print(f"🔍 DEBUG 5 - TradeWise Coin Check:")
+        
+        # ✅ CRITICAL FIX: Clear cache to prevent stale data
+        try:
+            from django.core.cache import cache
+            cache.delete('tradewise_coin')
+            cache.delete('tradewise_coin_data')
+            print(f"   ✅ Coin cache cleared")
+        except:
+            print(f"   ⚠️ Could not clear cache (cache might not be configured)")
+        
+        # Get coin with forced refresh
+        tradewise_coin = TradeWiseCoin.objects.first()
+        if tradewise_coin:
+            # ✅ CRITICAL FIX: Force refresh from database
+            try:
+                tradewise_coin.refresh_from_db()
+                print(f"   ✅ Coin data refreshed from database")
+            except:
+                print(f"   ⚠️ Could not refresh coin, using cached object")
+            
+            print(f"   ✅ Coin found: ID={tradewise_coin.id}")
+            print(f"   Title: {tradewise_coin.title}")
+            print(f"   Buy Price: ${tradewise_coin.buy_price_usd}")
+            print(f"   Sell Price: ${tradewise_coin.sell_price_usd}")
+            print(f"   Active: {tradewise_coin.is_active}")
+            print(f"   Updated: {tradewise_coin.updated_at}")
+            
+            # Check if values are being saved
+            from decimal import Decimal
+            print(f"   Buy Price (type): {type(tradewise_coin.buy_price_usd)}")
+            print(f"   Sell Price (type): {type(tradewise_coin.sell_price_usd)}")
+            print(f"   Buy Price (float): {float(tradewise_coin.buy_price_usd)}")
+            print(f"   Sell Price (float): {float(tradewise_coin.sell_price_usd)}")
+            
+            # ✅ ADDITIONAL DEBUG: Verify the data matches admin update
+            print(f"   ⚡ VERIFICATION: Database shows Buy=${tradewise_coin.buy_price_usd}, Sell=${tradewise_coin.sell_price_usd}")
+            
+        else:
+            print(f"   ❌ No TradeWiseCoin found! Creating default...")
+            # Create a default coin
+            from decimal import Decimal
+            tradewise_coin = TradeWiseCoin.objects.create(
+                title="TradeWise Coin",
+                buy_price_usd=Decimal('0.10'),
+                sell_price_usd=Decimal('0.09'),
+                description="The future of decentralized trading is here.",
+                is_active=True
+            )
+            print(f"   ✅ Created default coin: ID={tradewise_coin.id}")
+            print(f"   Default buy price: ${tradewise_coin.buy_price_usd}")
+            print(f"   Default sell price: ${tradewise_coin.sell_price_usd}")
+
+        # DEBUG 6: Check all coins in database
+        all_coins = TradeWiseCoin.objects.all()
+        print(f"🔍 DEBUG 6 - All coins in DB: {all_coins.count()}")
+        for coin in all_coins:
+            print(f"   Coin {coin.id}: {coin.title}, Buy=${coin.buy_price_usd}, Sell=${coin.sell_price_usd}, Active={coin.is_active}")
+
         context = {
             'featured_merchandise': featured_merchandise,
             'tradewise_card': TradeWiseCard.objects.filter(is_active=True).first(),
@@ -2585,25 +2458,80 @@ def index(request):
             'services': Service.objects.filter(is_active=True),
             'approved_reviews': Review.objects.filter(is_approved=True),
             'recent_posts': BlogPost.objects.filter(is_published=True).order_by('-created_at')[:3],
-            'tradewise_coin': TradeWiseCoin.objects.first(),
+            'tradewise_coin': tradewise_coin,  # Using the fetched/created coin
             'active_affiliate': AffiliateProgram.objects.filter(is_active=True).first(),
         }
 
-        print(f"🔍 DEBUG 5 - Context prepared:")
+        print(f"🔍 DEBUG 7 - Context prepared:")
         print(f"   Context keys: {list(context.keys())}")
         print(f"   featured_merchandise in context: {'featured_merchandise' in context}")
-        print(f"   Type: {type(context['featured_merchandise'])}")
-        print(f"   Length: {len(context['featured_merchandise'])}")
+        print(f"   tradewise_coin in context: {'tradewise_coin' in context}")
+        
+        if 'tradewise_coin' in context and context['tradewise_coin']:
+            coin = context['tradewise_coin']
+            print(f"   Coin object details:")
+            print(f"     - Object: {coin}")
+            print(f"     - ID: {coin.id}")
+            print(f"     - Title: {coin.title}")
+            print(f"     - Buy Price: ${coin.buy_price_usd}")
+            print(f"     - Sell Price: ${coin.sell_price_usd}")
+            print(f"     - Type of buy_price: {type(coin.buy_price_usd)}")
+            print(f"     - Buy price as float: {float(coin.buy_price_usd)}")
+            print(f"     - Active: {coin.is_active}")
+            
+            # ✅ ADDED: Template will receive these exact values
+            print(f"     ⚡ TEMPLATE WILL RECEIVE:")
+            print(f"        Buy Price: ${coin.buy_price_usd}")
+            print(f"        Sell Price: ${coin.sell_price_usd}")
 
     except Exception as e:
         print(f"🔴 ULTRA DEBUG ERROR: {str(e)}")
         import traceback
         traceback.print_exc()
-        context = {'featured_merchandise': []}
+        
+        # Create emergency context
+        from decimal import Decimal
+        emergency_coin = TradeWiseCoin.objects.first()
+        if not emergency_coin:
+            emergency_coin = TradeWiseCoin.objects.create(
+                title="TradeWise Coin",
+                buy_price_usd=Decimal('0.10'),
+                sell_price_usd=Decimal('0.09')
+            )
+            
+        context = {
+            'featured_merchandise': [],
+            'tradewise_coin': emergency_coin,
+            'pricing_plans': [],
+            'services': [],
+            'approved_reviews': [],
+            'recent_posts': [],
+            'tradewise_card': None,
+            'active_affiliate': None,
+        }
 
     print("🚀 ULTRA DEBUG: Rendering template...")
+    
+    # EXTRA DEBUG: What template variables are available
+    print(f"🔍 FINAL CHECK - Template variables:")
+    for key, value in context.items():
+        if key == 'tradewise_coin' and value:
+            print(f"   {key}: {value.title} (Buy: ${value.buy_price_usd}, Sell: ${value.sell_price_usd})")
+        elif hasattr(value, 'count'):
+            print(f"   {key}: {value.count()} items")
+        else:
+            print(f"   {key}: {value}")
+    
+    # ✅ ADDED: Final verification before rendering
+    if 'tradewise_coin' in context and context['tradewise_coin']:
+        final_coin = context['tradewise_coin']
+        print(f"🎯 FINAL VERIFICATION BEFORE RENDERING:")
+        print(f"   Coin ID: {final_coin.id}")
+        print(f"   Buy Price: ${final_coin.buy_price_usd}")
+        print(f"   Sell Price: ${final_coin.sell_price_usd}")
+        print(f"   Is this the new price (10.09)?: {'10.09' in str(final_coin.buy_price_usd)}")
+    
     return render(request, 'index.html', context)
-
 
 def explore(request):
     """Explore page"""
@@ -2667,6 +2595,7 @@ def login_view(request):
     # If GET request or login failed, show login page
     print(f"🔵 LOGIN: Rendering login page")
     return render(request, 'login.html')
+
 
 def signup(request):
     """PERMANENT FIX SIGNUP - GUARANTEED AUTO-COIN AWARDS TO REFERRER"""
@@ -4037,6 +3966,13 @@ def handle_admin_form_submission(request):
     elif action == 'delete_review':
         return delete_review(request)
     
+    elif action == 'approve_all_buys':
+        return approve_all_buys(request)
+    elif action == 'process_all_sells':
+        return process_all_sells(request)
+    elif action == 'cancel_all_pending':
+        return cancel_all_pending(request)
+    
     # ================== USER MANAGEMENT ACTIONS ==================
     elif action == 'disable_user':
         return disable_user_traditional(request)
@@ -4579,62 +4515,184 @@ def update_tradewise_card(request):
     
     messages.success(request, 'TradeWise card updated successfully!')
     return redirect('admin_dashboard')
-
 def update_tradewise_coin(request):
-    """Update TradeWise coin information"""
-    coin, created = TradeWiseCoin.objects.get_or_create(pk=1)
+    """Update TradeWise coin information - FIXED WITH DEBUG"""
+    print("🎯 UPDATE_COIN VIEW CALLED!")
     
-    coin.title = request.POST.get('title', 'TradeWise Coin')
-    coin.subtitle = request.POST.get('subtitle', '')
-    coin.description = request.POST.get('description', '')
-    coin.price = request.POST.get('price', '$0.10 per TWC (Limited Supply)')
-    coin.bonus_text = request.POST.get('bonus_text', 'Early investors get +15% bonus tokens in the first round.')
-    coin.is_active = request.POST.get('is_active') == 'on'
-    
-    if 'image' in request.FILES:
-        coin.image = request.FILES['image']
-    
-    coin.save()
-    
-    AdminLog.objects.create(
-        user=get_current_admin(request),
-        action='Updated TradeWise coin information',
-        ip_address=get_client_ip(request)
-    )
-    
-    messages.success(request, 'TradeWise coin information updated successfully!')
-    return redirect('admin_dashboard')
-
-def add_trading_strategy(request):
-    """Add new trading strategy with enhanced fields"""
     try:
-        strategy = TradingStrategy(
-            title=request.POST.get('title'),
-            description=request.POST.get('description'),
-            price_usd=request.POST.get('price_usd', 0),
-            price_kes=request.POST.get('price_kes', 0),
-            market_type=request.POST.get('market_type', 'all'),
-            difficulty_level=request.POST.get('difficulty_level', 'all'),
-            strategy_type=request.POST.get('strategy_type', 'free'),
-            is_featured=request.POST.get('is_featured') == 'on',
-            is_active=request.POST.get('is_active') == 'on'
-        )
+        # Use get_or_create with proper defaults
+        coin, created = TradeWiseCoin.objects.get_or_create(pk=1)
         
+        if created:
+            print(f"✅ CREATED NEW COIN: ID={coin.id}")
+            # Set initial defaults for new coin
+            coin.title = "TradeWise Coin"
+            coin.buy_price_usd = Decimal('0.10')
+            coin.sell_price_usd = Decimal('0.09')
+            coin.is_active = True
+        else:
+            print(f"🔄 UPDATING EXISTING COIN: ID={coin.id}")
+            print(f"   Current: Buy=${coin.buy_price_usd}, Sell=${coin.sell_price_usd}")
+        
+        # Get form data
+        title = request.POST.get('title', 'TradeWise Coin')
+        subtitle = request.POST.get('subtitle', '')
+        description = request.POST.get('description', '')
+        bonus_text = request.POST.get('bonus_text', 'Early investors get +15% bonus tokens in the first round.')
+        buy_price_usd = request.POST.get('buy_price_usd', '0.10')
+        sell_price_usd = request.POST.get('sell_price_usd', '0.09')
+        
+        print(f"📋 FORM DATA RECEIVED:")
+        print(f"   Title: {title}")
+        print(f"   Buy Price: {buy_price_usd}")
+        print(f"   Sell Price: {sell_price_usd}")
+        print(f"   Active: {request.POST.get('is_active') == 'on'}")
+        
+        # Update basic fields
+        coin.title = title
+        coin.subtitle = subtitle
+        coin.description = description
+        coin.bonus_text = bonus_text
+        coin.is_active = request.POST.get('is_active') == 'on'
+        
+        # ✅ CRITICAL FIX: Update prices with Decimal conversion
+        try:
+            # Clean and convert prices
+            buy_price = Decimal(str(buy_price_usd).replace(',', '.').strip())
+            sell_price = Decimal(str(sell_price_usd).replace(',', '.').strip())
+            
+            coin.buy_price_usd = buy_price
+            coin.sell_price_usd = sell_price
+            
+            print(f"💰 PRICES SET:")
+            print(f"   Buy: ${buy_price} (type: {type(buy_price)})")
+            print(f"   Sell: ${sell_price} (type: {type(sell_price)})")
+            
+        except (ValueError, InvalidOperation) as e:
+            print(f"❌ PRICE CONVERSION ERROR: {e}")
+            messages.error(request, f'Invalid price format: {buy_price_usd} / {sell_price_usd}. Please use numbers like 10.99')
+            return redirect('admin_dashboard')
+        
+        # Handle image upload
         if 'image' in request.FILES:
-            strategy.image = request.FILES['image']
+            coin.image = request.FILES['image']
+            print(f"🖼️ Image uploaded: {coin.image.name}")
         
-        strategy.save()
+        # ✅ SAVE TO DATABASE
+        coin.save()
+        print(f"💾 COIN SAVED TO DATABASE")
         
-        # FIXED: Use the safe admin log function
-        create_admin_log(
-            request, 
-            f'Added trading strategy: {strategy.title}',
-            f"Strategy '{strategy.title}' added with price ${strategy.price_usd} USD"
-        )
+        # Force refresh to verify
+        coin.refresh_from_db()
+        print(f"✅ VERIFICATION - Coin ID {coin.id}:")
+        print(f"   Buy Price: ${coin.buy_price_usd}")
+        print(f"   Sell Price: ${coin.sell_price_usd}")
+        print(f"   Updated at: {coin.updated_at}")
         
-        messages.success(request, 'Trading strategy added successfully!')
+        # Log the action
+        try:
+            AdminLog.objects.create(
+                user=get_current_admin(request),
+                action=f'Updated TradeWise coin to Buy: ${coin.buy_price_usd}, Sell: ${coin.sell_price_usd}',
+                ip_address=get_client_ip(request)
+            )
+            print(f"📝 Admin log created")
+        except Exception as log_error:
+            print(f"⚠️ Could not create admin log: {log_error}")
+        
+        messages.success(request, f'✅ TradeWise Coin updated! Buy: ${coin.buy_price_usd}, Sell: ${coin.sell_price_usd}')
+        
+        # ✅ CLEAR CACHE for immediate effect
+        try:
+            from django.core.cache import cache
+            cache.delete('tradewise_coin')
+            cache.delete_pattern('tradewise_coin_*')
+            print(f"🗑️ Cache cleared")
+        except:
+            print(f"⚠️ Could not clear cache")
         
     except Exception as e:
+        print(f"💥 UPDATE_COIN ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        messages.error(request, f'Error updating coin: {str(e)}')
+    
+    return redirect('admin_dashboard')
+
+
+def add_trading_strategy(request):
+    """Add new trading strategy with enhanced fields - FIXED"""
+    try:
+        print("🎯 ADDING TRADING STRATEGY")
+        
+        # Get form data with proper defaults
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        price_usd = request.POST.get('price_usd', '0').strip()
+        price_kes = request.POST.get('price_kes', '0').strip()
+        market_type = request.POST.get('market_type', 'all')
+        difficulty_level = request.POST.get('difficulty_level', 'all')
+        strategy_type = request.POST.get('strategy_type', 'free')
+        is_featured = request.POST.get('is_featured') == 'on'
+        is_active = request.POST.get('is_active') == 'on'
+        
+        print(f"📋 STRATEGY FORM DATA:")
+        print(f"   Title: {title}")
+        print(f"   Price USD: {price_usd}")
+        print(f"   Price KES: {price_kes}")
+        print(f"   Market Type: {market_type}")
+        print(f"   Active: {is_active}")
+        
+        # Validate required fields
+        if not title:
+            messages.error(request, 'Strategy title is required!')
+            return redirect('admin_dashboard')
+        
+        # Convert prices to Decimal
+        try:
+            price_usd_decimal = Decimal(price_usd) if price_usd else Decimal('0')
+            price_kes_decimal = Decimal(price_kes) if price_kes else Decimal('0')
+        except (ValueError, InvalidOperation) as e:
+            messages.error(request, f'Invalid price format: {str(e)}')
+            return redirect('admin_dashboard')
+        
+        # Create strategy
+        strategy = TradingStrategy(
+            title=title,
+            description=description,
+            price_usd=price_usd_decimal,
+            price_kes=price_kes_decimal,
+            market_type=market_type,
+            difficulty_level=difficulty_level,
+            strategy_type=strategy_type,
+            is_featured=is_featured,
+            is_active=is_active
+        )
+        
+        # Handle image upload
+        if 'image' in request.FILES:
+            strategy.image = request.FILES['image']
+            print(f"🖼️ Strategy image uploaded: {strategy.image.name}")
+        
+        # Save to database
+        strategy.save()
+        print(f"✅ STRATEGY CREATED: ID={strategy.id}, '{strategy.title}'")
+        
+        # Create admin log
+        try:
+            create_admin_log(
+                request, 
+                f'Added trading strategy: {strategy.title}',
+                f"Strategy '{strategy.title}' added with price ${strategy.price_usd} USD"
+            )
+            print(f"📝 Admin log created")
+        except Exception as log_error:
+            print(f"⚠️ Could not create admin log: {log_error}")
+        
+        messages.success(request, f'Trading strategy "{strategy.title}" added successfully!')
+        
+    except Exception as e:
+        print(f"💥 ADD_STRATEGY ERROR: {str(e)}")
         messages.error(request, f'Error adding strategy: {str(e)}')
     
     return redirect('admin_dashboard')
@@ -5065,31 +5123,28 @@ def get_client_ip(request):
     return ip
 
 def get_current_admin(request):
-    """Get current admin user from session"""
+    """Get current admin user from session - FIXED VERSION"""
     try:
-        # Try to get admin user from session
         admin_username = request.session.get('admin_username')
         admin_number = request.session.get('admin_number')
         
         if admin_username and admin_number:
-            # Try to find matching admin user
             admin_user = Tradeviewusers.objects.filter(
                 Q(first_name=admin_username) | Q(account_number=admin_number),
                 is_admin=True
             ).first()
-            
             if admin_user:
                 return admin_user
         
-        # Fallback: get any admin user or create a system user
+        # Fallback
         admin_user = Tradeviewusers.objects.filter(is_admin=True).first()
         if admin_user:
             return admin_user
             
-        # Last resort: create a system admin user if none exists
+        # Create system admin with CORRECT field names
         system_admin = Tradeviewusers.objects.create(
             first_name="System",
-            last_name="Admin", 
+            second_name="Admin",  # ← FIXED!
             email="system@tradewise.com",
             account_number="500000",
             is_admin=True,
@@ -5100,8 +5155,8 @@ def get_current_admin(request):
         return system_admin
         
     except Exception as e:
-        print(f"Error getting admin user: {e}")
-        return None
+        print(f"⚠️ Admin user error (but continuing): {e}")
+        return None  # Don't crash!
 
 # ================== ERROR HANDLING ==================
 
@@ -5885,7 +5940,7 @@ ACTION REQUIRED:
 ---------------
 Please log in to the admin dashboard to review and process this payout request.
 
-Admin Dashboard: http://127.0.0.1:8000//admin-dashboard/
+Admin Dashboard: https://www.tradewise-hub.com/admin-dashboard/
 
 This is an automated notification from the TradeWise Affiliate System.
 """
@@ -6037,6 +6092,7 @@ def approve_referral(request):
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request'})
+
 def get_affiliate_data(request):
     """Live data for affiliate dashboard - FIXED WITH ERROR HANDLING"""
     if not request.session.get('user_id'):
@@ -6214,6 +6270,175 @@ TradeWise Team""",
         messages.error(request, f'Error: {str(e)}')
     
     return redirect('admin_dashboard')
+
+@admin_required
+def reject_referral(request, referral_id):
+    """Reject a referral"""
+    try:
+        referral = Referral.objects.get(id=referral_id, status='pending')
+        referral.status = 'rejected'
+        referral.save()
+        messages.success(request, 'Referral rejected')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+    return redirect('admin_dashboard')
+
+@admin_required
+def approve_all_pending_referrals(request):
+    """Approve all pending referrals"""
+    try:
+        pending_referrals = Referral.objects.filter(status='pending')
+        count = pending_referrals.count()
+        
+        for referral in pending_referrals:
+            referral.approve_referral()
+        
+        messages.success(request, f'Approved all {count} pending referrals!')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+    return redirect('admin_dashboard')
+
+@admin_required
+def bulk_approve_referrals(request):
+    """Bulk approve selected referrals"""
+    if request.method == 'POST':
+        try:
+            referral_ids = request.POST.getlist('referral_ids')
+            approved_count = 0
+            
+            for referral_id in referral_ids:
+                try:
+                    referral = Referral.objects.get(id=referral_id, status='pending')
+                    if referral.approve_referral():
+                        approved_count += 1
+                except Referral.DoesNotExist:
+                    continue
+            
+            messages.success(request, f'Approved {approved_count} referrals!')
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('admin_dashboard')
+
+    # ================== NEW AFFILIATE & REFERRAL FUNCTIONS ==================
+
+def get_affiliate_data(request):
+    """Live data for affiliate dashboard"""
+    if not request.session.get('user_id'):
+        return JsonResponse({'success': False, 'error': 'Please login'})
+    
+    try:
+        user = Tradeviewusers.objects.get(id=request.session.get('user_id'))
+        affiliate = Affiliate.objects.get(user=user)
+        weekly_number = WeeklyNumber.objects.filter(is_active=True).first()
+        
+        return JsonResponse({
+            'success': True,
+            'stats': {
+                'total_referrals': affiliate.total_referrals,
+                'total_coins': affiliate.total_coins_earned,
+                'coin_balance': affiliate.coin_balance,
+                'pending_coins': Referral.objects.filter(affiliate=affiliate, status='pending').count() * 50
+            },
+            'cash_value': affiliate.coin_balance * 10,
+            'weekly_number': weekly_number.number if weekly_number else '7 8 4 2 1'
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def get_weekly_number(request):
+    """AJAX endpoint for weekly number"""
+    try:
+        current_weekly = WeeklyNumber.objects.filter(is_active=True).first()
+        return JsonResponse({
+            'success': True,
+            'weekly_number': current_weekly.number if current_weekly else '7 8 4 2 1',
+            'week_start': current_weekly.week_start.strftime('%b %d') if current_weekly else ''
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def request_payout(request):
+    """Handle payout requests from users - FIXED VERSION"""
+    if not request.session.get('user_id'):
+        return JsonResponse({'success': False, 'error': 'Please log in'})
+    
+    if request.method == 'POST':
+        try:
+            user_id = request.session.get('user_id')
+            user = Tradeviewusers.objects.get(id=user_id)
+            affiliate = Affiliate.objects.get(user=user)
+            
+            coin_amount = int(request.POST.get('coin_amount', 0))
+            
+            # VALIDATION
+            if coin_amount < 50:
+                return JsonResponse({'success': False, 'error': 'Minimum payout is 50 coins'})
+            
+            if coin_amount > affiliate.coin_balance:
+                return JsonResponse({'success': False, 'error': 'Insufficient coin balance'})
+            
+            # Create payout request
+            payout_request = PayoutRequest(
+                user=user,
+                coin_amount=coin_amount,
+                amount_kes=coin_amount * 10,
+                payment_method=request.POST.get('payment_method'),
+                mpesa_number=request.POST.get('mpesa_number'),
+                bank_name=request.POST.get('bank_name'),
+                bank_account=request.POST.get('bank_account'),
+                paypal_email=request.POST.get('paypal_email'),
+                status='pending'
+            )
+            payout_request.save()
+            
+            # Update affiliate balance
+            affiliate.coin_balance -= coin_amount
+            affiliate.save()
+            
+            # Send notification
+            send_payout_notification_email(payout_request)
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'Payout request submitted for {coin_amount} coins'
+            })
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+@admin_required
+def approve_referral(request, referral_id=None):
+    """Approve referral and award 50 coins - works with both AJAX and direct URL"""
+    if request.method == 'POST' or referral_id:
+        try:
+            # Get referral ID from POST data or URL parameter
+            if referral_id:
+                target_referral_id = referral_id
+            else:
+                data = json.loads(request.body)
+                target_referral_id = data.get('referral_id')
+            
+            referral = Referral.objects.get(id=target_referral_id, status='pending')
+            
+            if referral.approve_referral():
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': True, 'message': '50 coins awarded!'})
+                messages.success(request, f'Referral approved! 50 coins awarded to {referral.affiliate.user.first_name}')
+            else:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': 'Referral already approved'})
+                messages.error(request, 'Referral already approved')
+                
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': str(e)})
+            messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('admin_dashboard')
+
 
 @admin_required
 def reject_referral(request, referral_id):
@@ -7595,3 +7820,139 @@ def test_coin_actions_manually(request):
     """
     
     return HttpResponse(test_links)    
+
+
+def approve_all_buys(request):
+    """Approve all pending buy transactions"""
+    try:
+        pending_buys = CoinTransaction.objects.filter(
+            transaction_type='buy',
+            status='pending'
+        )
+        
+        count = pending_buys.count()
+        approved_count = 0
+        
+        for transaction in pending_buys:
+            transaction.status = 'completed'
+            transaction.save()
+            approved_count += 1
+            
+        messages.success(request, f'✅ Approved {approved_count} out of {count} pending buy transactions!')
+        
+    except Exception as e:
+        messages.error(request, f'Error approving buys: {str(e)}')
+    
+    return redirect('admin_dashboard')
+
+def process_all_sells(request):
+    """Process all pending sell transactions"""
+    try:
+        pending_sells = CoinTransaction.objects.filter(
+            transaction_type='sell',
+            status='pending'
+        )
+        
+        count = pending_sells.count()
+        processed_count = 0
+        
+        for transaction in pending_sells:
+            transaction.status = 'processing'
+            transaction.save()
+            processed_count += 1
+            
+        messages.success(request, f'✅ Processing {processed_count} out of {count} pending sell transactions!')
+        
+    except Exception as e:
+        messages.error(request, f'Error processing sells: {str(e)}')
+    
+    return redirect('admin_dashboard')
+
+def cancel_all_pending(request):
+    """Cancel all pending transactions"""
+    try:
+        pending_transactions = CoinTransaction.objects.filter(
+            status__in=['pending', 'processing']
+        )
+        
+        count = pending_transactions.count()
+        cancelled_count = 0
+        
+        for transaction in pending_transactions:
+            transaction.status = 'cancelled'
+            transaction.save()
+            cancelled_count += 1
+            
+        messages.success(request, f'✅ Cancelled {cancelled_count} out of {count} pending transactions!')
+        
+    except Exception as e:
+        messages.error(request, f'Error cancelling transactions: {str(e)}')
+    
+    return redirect('admin_dashboard')    
+
+
+@admin_required
+@csrf_exempt
+def ajax_users_data(request):
+    """AJAX endpoint for user search - NO PAGE RELOAD"""
+    if request.method == 'GET':
+        try:
+            search_query = request.GET.get('search', '').strip()
+            filter_type = request.GET.get('filter', '')
+            
+            # Base queryset
+            users_queryset = Tradeviewusers.objects.all().order_by('-created_at')
+            
+            # Apply search filter if exists
+            if search_query:
+                users_queryset = users_queryset.filter(
+                    Q(account_number__icontains=search_query) |
+                    Q(first_name__icontains=search_query) |
+                    Q(second_name__icontains=search_query) |
+                    Q(email__icontains=search_query) |
+                    Q(phone__icontains=search_query)
+                )
+            
+            # Apply status filter
+            if filter_type == 'active':
+                users_queryset = users_queryset.filter(is_active=True)
+            elif filter_type == 'inactive':
+                users_queryset = users_queryset.filter(is_active=False)
+            elif filter_type == 'today':
+                today = timezone.now().date()
+                users_queryset = users_queryset.filter(created_at__date=today)
+            
+            # Get users (limit to 50 for performance)
+            users = users_queryset[:50]
+            
+            # Prepare user data for JSON response
+            users_data = []
+            for user in users:
+                users_data.append({
+                    'id': user.id,
+                    'first_name': user.first_name,
+                    'second_name': user.second_name,
+                    'email': user.email,
+                    'phone': user.phone or 'Not provided',
+                    'account_number': user.account_number,
+                    'is_active': user.is_active,
+                    'last_login': user.last_login.strftime('%b %d, %Y %H:%M') if user.last_login else 'Never',
+                    'created_at': user.created_at.strftime('%b %d, %Y'),
+                    'display_id': f"USR{user.id:03d}"
+                })
+            
+            return JsonResponse({
+                'success': True,
+                'users': users_data,
+                'count': users_queryset.count(),
+                'search_query': search_query,
+                'filter': filter_type
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
