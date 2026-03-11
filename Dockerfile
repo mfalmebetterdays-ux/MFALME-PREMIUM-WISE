@@ -19,10 +19,13 @@ RUN pip install Pillow
 COPY . .
 RUN pip install -r requirements.txt
 
-# ✅ ADD THIS LINE - Run collectstatic during build
+# ✅ Run collectstatic during build
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8080
 
-# Run migrations and start server
-CMD python manage.py makemigrations && python manage.py migrate && gunicorn dict.wsgi:application --bind 0.0.0.0:$PORT
+# ✅ UPDATED: Run migrations, import users, then start server
+CMD python manage.py makemigrations && \
+    python manage.py migrate && \
+    python manage.py import_users && \
+    gunicorn dict.wsgi:application --bind 0.0.0.0:$PORT

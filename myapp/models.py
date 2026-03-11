@@ -299,29 +299,74 @@ Registered: {self.created_at.strftime('%Y-%m-%d %H:%M')}
             return False
 
     def send_password_reset_email(self):
-        """Send password reset email"""
+        """Send password reset email - FIXED VERSION WITH CORRECT INDENTATION"""
         try:
-            print(f"🟢 MODEL: Starting password reset email for {self.email}")
+            print(f"🟢 SENDING PASSWORD RESET EMAIL to {self.email}")
             
             if not self.password_reset_token:
                 self.password_reset_token = secrets.token_urlsafe(32)
                 self.save()
+                print(f"🔑 Generated new token: {self.password_reset_token}")
             
-            subject = '🔐 Reset Your TradeWise Password'
+            # Use your actual domain
             reset_url = f"https://www.tradewise-hub.com/reset-password/{self.password_reset_token}/"
             
-            html_message = render_to_string('emails/password_reset.html', {
-                'user': self,
-                'reset_url': reset_url,
-            })
+            print(f"🔗 Reset URL: {reset_url}")
             
+            subject = '🔐 Reset Your TradeWise Password'
+            
+            # HTML Email
+            html_message = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                    .header {{ background: linear-gradient(135deg, #2c3e50, #3498db); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+                    .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                    .button {{ display: inline-block; padding: 12px 30px; background: #3498db; color: white; text-decoration: none; border-radius: 25px; margin: 20px 0; }}
+                    .footer {{ margin-top: 30px; font-size: 12px; color: #7f8c8d; text-align: center; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>TradeWise</h1>
+                    </div>
+                    <div class="content">
+                        <h2>Password Reset Request</h2>
+                        <p>Hello {self.first_name},</p>
+                        <p>We received a request to reset your password for your TradeWise account. Click the button below to create a new password:</p>
+                        
+                        <div style="text-align: center;">
+                            <a href="{reset_url}" class="button">Reset Password</a>
+                        </div>
+                        
+                        <p>If the button doesn't work, copy and paste this link into your browser:</p>
+                        <p style="word-break: break-all; background: #eee; padding: 10px; border-radius: 5px;">{reset_url}</p>
+                        
+                        <p>This link will expire in 24 hours. If you didn't request this, please ignore this email.</p>
+                        
+                        <p>Best regards,<br>TradeWise Team</p>
+                    </div>
+                    <div class="footer">
+                        <p>&copy; 2026 TradeWise. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+            
+            # Plain text version
             plain_message = f"""
-Password Reset Request
+Password Reset Request - TradeWise
 
 Hello {self.first_name},
 
-You requested to reset your password. Click the link below:
+We received a request to reset your password for your TradeWise account.
 
+Click the link below to reset your password:
 {reset_url}
 
 If you didn't request this, please ignore this email.
@@ -330,6 +375,7 @@ Best regards,
 TradeWise Team
             """
             
+            # Send email
             result = send_mail(
                 subject=subject,
                 message=plain_message,
@@ -339,11 +385,19 @@ TradeWise Team
                 fail_silently=False,
             )
             
-            print(f"✅ MODEL: Password reset email sent - Result: {result}")
-            return True
+            print(f"📧 Email send result: {result} (1 = success)")
+            
+            if result == 1:
+                print(f"✅ Password reset email sent successfully to {self.email}")
+                return True
+            else:
+                print(f"❌ Failed to send email to {self.email}")
+                return False
             
         except Exception as e:
-            print(f"❌ MODEL: Password reset email failed: {str(e)}")
+            print(f"❌ Password reset email error: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def __str__(self):

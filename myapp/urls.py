@@ -1,5 +1,5 @@
 # myapp/urls.py
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 
 urlpatterns = [
@@ -18,7 +18,8 @@ urlpatterns = [
     path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('logout/', views.logout_view, name='logout_view'),
     path('verify-email/<str:token>/', views.verify_email, name='verify_email'),
-    path('reset-password/<str:token>/', views.reset_password, name='reset_password'),
+    # ✅ FIXED: Changed from <str:token> to <path:token> to handle special characters
+    path('reset-password/<path:token>/', views.reset_password, name='reset_password'),
     
     # ================== ADMIN AUTHENTICATION URLS ==================
     path('admin-login/', views.admin_login, name='admin_login'),
@@ -111,23 +112,22 @@ urlpatterns = [
     path('get-card-data/', views.get_card_data, name='get_card_data'),
 
     # ================== SERVICE REQUEST ACTION URLS ==================
-path('admin/update-request-status/', views.update_request_status_traditional, name='update_request_status'),
-path('admin/delete-request/<int:request_id>/', views.delete_request, name='delete_request'),
-path('admin/view-request/<int:request_id>/', views.view_request_details, name='view_request_details'),
+    path('admin/update-request-status/', views.update_request_status_traditional, name='update_request_status'),
+    path('admin/delete-request/<int:request_id>/', views.delete_request, name='delete_request'),
+    path('admin/view-request/<int:request_id>/', views.view_request_details, name='view_request_details'),
 
-# ================== AJAX ENDPOINTS FOR BUTTONS ==================
-path('ajax/update-request-status/', views.ajax_update_request_status, name='ajax_update_request_status'),
-path('ajax/delete-request/', views.ajax_delete_request, name='ajax_delete_request'),
+    # ================== AJAX ENDPOINTS FOR BUTTONS ==================
+    path('ajax/update-request-status/', views.ajax_update_request_status, name='ajax_update_request_status'),
+    path('ajax/delete-request/', views.ajax_delete_request, name='ajax_delete_request'),
 
-
-# ================== COINS TRANSACTIONS URL==================
+    # ================== COINS TRANSACTIONS URL ==================
     path('initialize-coin-buy/', views.initialize_coin_buy, name='initialize_coin_buy'),
     path('submit-coin-sell-request/', views.submit_coin_sell_request, name='submit_coin_sell_request'),
     path('verify-coin-payment/<str:reference>/', views.verify_coin_payment, name='verify_coin_payment'),
     path('admin/update-coin-transaction/', views.update_coin_transaction_status, name='update_coin_transaction_status'),
     path('debug-email-templates/', views.debug_email_templates, name='debug_email_templates'),
-   path('test-admin-coin-actions/', views.test_admin_coin_actions, name='test_admin_coin_actions'),
-   path('admin-process-form/', views.process_admin_form, name='process_admin_form'),
-   path('admin/ajax/users-data/', views.ajax_users_data, name='ajax_users_data'),
+    path('test-admin-coin-actions/', views.test_admin_coin_actions, name='test_admin_coin_actions'),
+    path('admin-process-form/', views.process_admin_form, name='process_admin_form'),
+    path('admin/ajax/users-data/', views.ajax_users_data, name='ajax_users_data'),
     
 ]

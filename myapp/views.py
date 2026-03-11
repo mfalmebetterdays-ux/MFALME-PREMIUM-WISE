@@ -282,45 +282,56 @@ def verify_email(request, token):
         return redirect('index')
 
 def reset_password(request, token):
-    """Handle password reset - UPDATED WITH DEBUGGING"""
+    """Handle password reset with comprehensive debugging"""
+    print("\n" + "="*60)
+    print(f"🔍 RESET PASSWORD VIEW CALLED")
+    print(f"📝 TOKEN FROM URL: '{token}'")
+    print("="*60)
+    
+    # Find user with this token
     try:
-        print(f"🟢 RESET PASSWORD: Processing reset for token: {token}")
-        
-        if request.method == 'POST':
-            new_password = request.POST.get('new_password')
-            confirm_password = request.POST.get('confirm_password')
-            
-            # Validate passwords match
-            if new_password != confirm_password:
-                messages.error(request, 'Passwords do not match.')
-                return render(request, 'reset_password.html', {'token': token})
-            
-            # Validate password length
-            if len(new_password) < 6:
-                messages.error(request, 'Password must be at least 6 characters long.')
-                return render(request, 'reset_password.html', {'token': token})
-                
-            user = Tradeviewusers.objects.get(password_reset_token=token)
-            user.password = new_password  # This will be hashed in save()
-            user.password_reset_token = None
-            user.save()
-            
-            print(f"✅ RESET PASSWORD: Password reset successful for {user.email}")
-            messages.success(request, 'Password reset successfully! You can now login with your new password.')
-            return redirect('login_view')
-            
-        # GET request - show reset form
         user = Tradeviewusers.objects.get(password_reset_token=token)
-        return render(request, 'reset_password.html', {'token': token, 'email': user.email})
+        print(f"✅ User found: {user.email}")
         
     except Tradeviewusers.DoesNotExist:
-        print(f"❌ RESET PASSWORD: Invalid reset token - {token}")
-        messages.error(request, 'Invalid reset token. Please request a new password reset.')
+        print(f"❌ No user found for token")
+        messages.error(request, '❌ Invalid or expired reset link. Please request a new one.')
         return redirect('forgot_password')
-    except Exception as e:
-        print(f"❌ RESET PASSWORD: Unexpected error - {str(e)}")
-        messages.error(request, 'Password reset failed. Please try again.')
-        return redirect('forgot_password')
+    
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        print(f"📝 Password reset form submitted for {user.email}")
+        
+        # Validate passwords
+        if new_password != confirm_password:
+            messages.error(request, '❌ Passwords do not match.')
+            return render(request, 'reset_password.html', {'token': token})
+        
+        if len(new_password) < 6:
+            messages.error(request, '❌ Password must be at least 6 characters long.')
+            return render(request, 'reset_password.html', {'token': token})
+        
+        # Update password
+        from django.contrib.auth.hashers import make_password
+        user.password = make_password(new_password)
+        user.password_reset_token = None  # Clear token after use
+        user.save()
+        
+        print(f"✅ Password reset successful for {user.email}")
+        
+        # AUTO-LOGIN the user
+        request.session['user_id'] = user.id
+        request.session['account_number'] = user.account_number
+        request.session['first_name'] = user.first_name
+        request.session['second_name'] = user.second_name
+        
+        messages.success(request, '✅ Password reset successfully! Welcome back.')
+        return redirect('account')  # Redirect to account page
+    
+    # GET request - show reset form with token
+    return render(request, 'reset_password.html', {'token': token})
 
 def send_service_request_email_to_admin(service_request):
     """Send email to admin when new service request is made - UPDATED WITH DEBUGGING"""
@@ -2868,16 +2879,36 @@ def forgot_password(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         
+        print(f"🔐 PASSWORD RESET REQUESTED FOR: {email}")
+        
         try:
             user = Tradeviewusers.objects.get(email=email)
-            # Create password reset token
-            user.password_reset_token = secrets.token_urlsafe(32)
-            user.save()
             
-            # Send reset email (simplified)
-            messages.success(request, 'Password reset instructions have been sent to your email.')
+            # Generate reset token
+            if not user.password_reset_token:
+                user.password_reset_token = secrets.token_urlsafe(32)
+                user.save()
+            
+            # Send reset email
+            email_sent = user.send_password_reset_email()
+            
+            if email_sent:
+                messages.success(request, 
+                    '✅ Password reset instructions have been sent to your email. '
+                    'Please check your inbox and spam folder.'
+                )
+            else:
+                messages.error(request, 
+                    '❌ There was a problem sending the email. '
+                    'Please try again or contact support.'
+                )
+            
         except Tradeviewusers.DoesNotExist:
-            messages.error(request, 'No account found with this email address.')
+            # Don't reveal if email exists (security)
+            messages.success(request, 
+                'If an account exists with this email, '
+                'you will receive password reset instructions.'
+            )
     
     return render(request, 'forgot_password.html')
 

@@ -5,16 +5,10 @@ from myapp.models import Tradeviewusers
 from datetime import datetime
 
 class Command(BaseCommand):
-    help = 'Import all 111 TradeWise users'
+    help = 'Import all 111 TradeWise users (adds missing ones)'
 
     def handle(self, *args, **options):
         self.stdout.write('🚀 Starting user import...')
-        
-        # Check if users already exist
-        existing_count = Tradeviewusers.objects.count()
-        if existing_count > 0:
-            self.stdout.write(f'⚠️ Database already has {existing_count} users. Skipping import.')
-            return
         
         # Your 111 users from the CSV
         users_data = [
@@ -132,8 +126,18 @@ class Command(BaseCommand):
         ]
         
         imported = 0
+        skipped = 0
+        total_in_db = Tradeviewusers.objects.count()
+        
+        self.stdout.write(f'📊 Current users in database: {total_in_db}')
+        
         for data in users_data:
             try:
+                # Check if user already exists by email
+                if Tradeviewusers.objects.filter(email=data['email']).exists():
+                    skipped += 1
+                    continue
+                
                 # Parse the created_at date
                 created_at = datetime.strptime(data['created_at'], '%Y-%m-%d %H:%M:%S')
                 
@@ -155,11 +159,11 @@ class Command(BaseCommand):
                 user.save()
                 
                 imported += 1
-                self.stdout.write(f'  ✅ {data["email"]}')
+                self.stdout.write(f'  ✅ Added: {data["email"]}')
                 
             except Exception as e:
-                self.stdout.write(f'  ❌ {data["email"]}: {str(e)}')
+                self.stdout.write(f'  ❌ Error with {data["email"]}: {str(e)}')
         
-        self.stdout.write(self.style.SUCCESS(f'\n🎉 Successfully imported {imported} users!'))
-        self.stdout.write(self.style.WARNING('🔑 Temporary password for ALL users: ResetMe@2025'))
-        self.stdout.write(self.style.WARNING('📝 Users MUST reset password on first login'))
+        self.stdout.write(self.style.SUCCESS(f'\n🎉 Import complete! Added: {imported} new users, Skipped: {skipped} existing'))
+        self.stdout.write(self.style.WARNING(f'🔑 Temporary password for NEW users: ResetMe@2025'))
+        self.stdout.write(self.style.WARNING(f'📊 Total users now: {Tradeviewusers.objects.count()}'))
