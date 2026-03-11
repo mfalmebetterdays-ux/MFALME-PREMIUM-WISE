@@ -1045,7 +1045,7 @@ class Affiliate(models.Model):
         base_url = "https://www.tradewise-hub.com"
         if request:
             base_url = f"http://{request.get_host()}"
-        return f"{base_url}/signup?ref={self.referral_code}"
+        return f"{base_url}signup?ref={self.referral_code}"
 
     def get_referral_stats(self):
         total_referrals = self.referrals.count()
