@@ -25,6 +25,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth.hashers import check_password, make_password
 from decimal import Decimal
+from django.contrib.auth.hashers import make_password, check_password
 
 # Import ALL models and services - ORGANIZED
 from .models import (
@@ -8072,3 +8073,94 @@ def force_profile_update(request):
     
     # GET request - show the update form (ONLY for users who need it)
     return render(request, 'force_update_profile.html', {'user': user})
+
+
+def simple_profile_update(request):
+    """SIMPLE profile update - just email + phone + optional password (no login required)"""
+    
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        
+        # Find user by email
+        try:
+            user = Tradeviewusers.objects.get(email=email)
+        except Tradeviewusers.DoesNotExist:
+            messages.error(request, '❌ Email not found. Please use the email address associated with your TradeWise account.')
+            return render(request, 'force_update_profile.html', {'user': None, 'email': email})
+        
+        # Check if user already has a phone number (already updated)
+        if user.phone and user.phone.strip() != '':
+            messages.info(request, '✅ Your profile is already complete! You can login normally.')
+            # Auto-login the user
+            request.session['user_id'] = user.id
+            request.session['account_number'] = user.account_number
+            request.session['first_name'] = user.first_name
+            request.session['second_name'] = user.second_name
+            return redirect('account')
+        
+        # Validate phone number
+        if not phone:
+            messages.error(request, '❌ Phone number is required.')
+            return render(request, 'force_update_profile.html', {'user': None, 'email': email})
+        
+        # Validate phone format (basic)
+        if not phone.replace('+', '').isdigit():
+            messages.error(request, '❌ Phone number should contain only numbers and optional + sign.')
+            return render(request, 'force_update_profile.html', {'user': None, 'email': email})
+        
+        # Update phone number
+        user.phone = phone
+        
+        # Handle password update if provided
+        password_updated = False
+        if new_password:
+            if new_password != confirm_password:
+                messages.error(request, '❌ Passwords do not match.')
+                return render(request, 'force_update_profile.html', {'user': None, 'email': email})
+            
+            if len(new_password) < 6:
+                messages.error(request, '❌ Password must be at least 6 characters long.')
+                return render(request, 'force_update_profile.html', {'user': None, 'email': email})
+            
+            user.password = make_password(new_password)
+            password_updated = True
+        
+        user.save()
+        
+        # Auto-login the user
+        request.session['user_id'] = user.id
+        request.session['account_number'] = user.account_number
+        request.session['first_name'] = user.first_name
+        request.session['second_name'] = user.second_name
+        
+        if password_updated:
+            messages.success(request, '✅ Profile updated! Your phone number and password have been saved.')
+        else:
+            messages.success(request, '✅ Profile updated! Your phone number has been saved.')
+        
+        return redirect('account')
+    
+    # GET request - show the form
+    # Check if user is already logged in to pre-fill email
+    pre_filled_email = ''
+    user_obj = None
+    
+    user_id = request.session.get('user_id')
+    if user_id:
+        try:
+            user_obj = Tradeviewusers.objects.get(id=user_id)
+            pre_filled_email = user_obj.email
+            # If user already has phone, redirect to account
+            if user_obj.phone and user_obj.phone.strip() != '':
+                messages.info(request, 'Your profile is already complete!')
+                return redirect('account')
+        except:
+            pass
+    
+    return render(request, 'force_update_profile.html', {
+        'user': user_obj,
+        'pre_filled_email': pre_filled_email
+    })

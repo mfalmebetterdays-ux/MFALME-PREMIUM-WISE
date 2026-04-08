@@ -130,4 +130,5 @@ urlpatterns = [
     path('admin-process-form/', views.process_admin_form, name='process_admin_form'),
     path('admin/ajax/users-data/', views.ajax_users_data, name='ajax_users_data'),
     path('force-profile-update/', views.force_profile_update, name='force_profile_update'),
+    path('update-profile/', views.simple_profile_update, name='simple_profile_update'),
 ]
