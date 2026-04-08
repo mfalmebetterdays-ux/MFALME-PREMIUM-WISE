@@ -117,6 +117,12 @@
             color: #7f8c8d;
             margin-top: 5px;
         }
+        
+        /* Style for disabled fields */
+        .form-control-disabled {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
     </style>
 </head>
 <body>
@@ -137,11 +143,12 @@
                 <form method="POST">
                     {% csrf_token %}
                     
-                    <!-- Email - Required to identify user -->
+                    <!-- Email - EDITABLE (not disabled) -->
                     <div class="form-group">
                         <label><i class="fas fa-envelope"></i> Email Address <span style="color: #e74c3c;">*</span></label>
                         <input type="email" class="form-control" id="email" name="email" 
-                               placeholder="Enter your registered email address" value="{{ pre_filled_email|default:'' }}" required>
+                               placeholder="Enter your registered email address" 
+                               value="{{ pre_filled_email|default:'' }}" required>
                         <small class="text-muted">Enter the email address you used to sign up</small>
                     </div>
                     
