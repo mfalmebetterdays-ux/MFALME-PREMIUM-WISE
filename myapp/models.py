@@ -38,7 +38,7 @@ class PaystackService:
         
         data = {
             "email": email,
-            "amount": amount,  # Amount in kobo
+            "amount": amount,
             "reference": reference,
         }
         
@@ -119,7 +119,6 @@ class Tradeviewusers(models.Model):
         if not self.pk and not self.email_verification_token:
             self.email_verification_token = secrets.token_urlsafe(32)
             
-        # Auto-set admin status for specific account numbers
         if self.account_number in [500100, 500200]:
             self.is_admin = True
             self.is_staff = True
@@ -134,7 +133,7 @@ class Tradeviewusers(models.Model):
         return self.is_admin and self.account_number in [500100, 500200]
 
     def send_verification_email(self):
-        """Send email verification"""
+        """Send email verification - UPDATED WITH PHONE NUMBER"""
         try:
             print(f"🟢 MODEL: Starting verification email for {self.email}")
             
@@ -151,6 +150,7 @@ class Tradeviewusers(models.Model):
                 html_message = render_to_string('emails/verification_email.html', {
                     'user': self,
                     'verification_url': verification_url,
+                    'user_phone': self.phone,
                 })
                 print(f"✅ MODEL: verification_email.html template found")
             except Exception as e:
@@ -158,6 +158,8 @@ class Tradeviewusers(models.Model):
                 html_message = f"""
                 <h2>Verify Your TradeWise Account</h2>
                 <p>Hello {self.first_name},</p>
+                <p>Account Number: {self.account_number}</p>
+                <p>Phone Number: {self.phone}</p>
                 <p>Click here to verify: <a href="{verification_url}">Verify Email</a></p>
                 """
             
@@ -170,6 +172,7 @@ Your Account Details:
 - Name: {self.first_name} {self.second_name}
 - TradeWise Number: {self.account_number}
 - Email: {self.email}
+- Phone Number: {self.phone}
 
 Click the link below to verify your email:
 {verification_url}
@@ -196,7 +199,7 @@ TradeWise Team
             return False
 
     def send_welcome_email(self, password):
-        """Send welcome email"""
+        """Send welcome email - UPDATED WITH PHONE NUMBER"""
         try:
             print(f"🟢 MODEL: Starting welcome email for {self.email}")
             
@@ -205,7 +208,8 @@ TradeWise Team
             try:
                 html_message = render_to_string('emails/welcome_email.html', {
                     'user': self,
-                    'password': password,
+                    'plain_password': password,
+                    'user_phone': self.phone,
                 })
                 print(f"✅ MODEL: welcome_email.html template found")
             except Exception as e:
@@ -214,6 +218,7 @@ TradeWise Team
                 <h2>Welcome to TradeWise!</h2>
                 <p>Hello {self.first_name}, your account was created successfully!</p>
                 <p>Account Number: {self.account_number}</p>
+                <p>Phone Number: {self.phone}</p>
                 <p>Temporary Password: {password}</p>
                 """
             
@@ -226,6 +231,7 @@ Account Details:
 - Name: {self.first_name} {self.second_name}
 - TradeWise Number: {self.account_number}
 - Email: {self.email}
+- Phone Number: {self.phone}
 - Temporary Password: {password}
 
 Please change your password after first login.
@@ -251,7 +257,7 @@ TradeWise Team
             return False
 
     def send_new_user_notification(self):
-        """Send admin notification"""
+        """Send admin notification - UPDATED WITH PHONE NUMBER"""
         try:
             print(f"🟢 MODEL: Starting admin notification for new user {self.email}")
             
@@ -260,6 +266,7 @@ TradeWise Team
             try:
                 html_message = render_to_string('emails/new_user.html', {
                     'user': self,
+                    'user_phone': self.phone,
                 })
                 print(f"✅ MODEL: new_user.html template found")
             except Exception as e:
@@ -268,6 +275,7 @@ TradeWise Team
                 <h2>New User Registered</h2>
                 <p>Name: {self.first_name} {self.second_name}</p>
                 <p>Email: {self.email}</p>
+                <p>Phone: {self.phone}</p>
                 <p>Account: {self.account_number}</p>
                 """
             
@@ -299,7 +307,7 @@ Registered: {self.created_at.strftime('%Y-%m-%d %H:%M')}
             return False
 
     def send_password_reset_email(self):
-        """Send password reset email - FIXED VERSION WITH CORRECT INDENTATION"""
+        """Send password reset email"""
         try:
             print(f"🟢 SENDING PASSWORD RESET EMAIL to {self.email}")
             
@@ -308,14 +316,12 @@ Registered: {self.created_at.strftime('%Y-%m-%d %H:%M')}
                 self.save()
                 print(f"🔑 Generated new token: {self.password_reset_token}")
             
-            # Use your actual domain
             reset_url = f"https://www.tradewise-hub.com/reset-password/{self.password_reset_token}/"
             
             print(f"🔗 Reset URL: {reset_url}")
             
             subject = '🔐 Reset Your TradeWise Password'
             
-            # HTML Email
             html_message = f"""
             <!DOCTYPE html>
             <html>
@@ -358,7 +364,6 @@ Registered: {self.created_at.strftime('%Y-%m-%d %H:%M')}
             </html>
             """
             
-            # Plain text version
             plain_message = f"""
 Password Reset Request - TradeWise
 
@@ -375,7 +380,6 @@ Best regards,
 TradeWise Team
             """
             
-            # Send email
             result = send_mail(
                 subject=subject,
                 message=plain_message,
@@ -417,12 +421,10 @@ class UserProfile(models.Model):
     country = models.CharField(max_length=100, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
     
-    # Trading preferences
     trading_experience = models.CharField(max_length=50, blank=True, null=True)
     preferred_markets = models.JSONField(default=list, blank=True)
     risk_tolerance = models.CharField(max_length=20, blank=True, null=True)
     
-    # Notification preferences
     email_notifications = models.BooleanField(default=True)
     sms_notifications = models.BooleanField(default=False)
     
@@ -432,6 +434,7 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"Profile of {self.user.first_name} {self.user.second_name}"
     
+
 # ================== CONTENT MANAGEMENT MODELS ==================
 
 class TradeWiseCard(models.Model):
@@ -627,30 +630,24 @@ class CoinTransaction(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     
-    # Transaction Info
     transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
-    # User Information
     customer_name = models.CharField(max_length=200)
     customer_email = models.EmailField()
     customer_phone = models.CharField(max_length=20)
     
-    # Transaction Details
     coin_amount = models.DecimalField(max_digits=20, decimal_places=8)
     usd_amount = models.DecimalField(max_digits=20, decimal_places=2)
     rate = models.DecimalField(max_digits=10, decimal_places=6)
     
-    # Platform/Wallet Information
     exchange_platform = models.CharField(max_length=100, blank=True, null=True)
     wallet_address = models.CharField(max_length=255, blank=True, null=True)
     
-    # Payment Information
     payment_reference = models.CharField(max_length=100, unique=True, blank=True, null=True)
     payment_method = models.CharField(max_length=50, default='paystack')
     paystack_response = models.JSONField(default=dict, blank=True)
     
-    # Admin Tracking
     notes = models.TextField(blank=True, null=True)
     admin_notes = models.TextField(blank=True, null=True)
     
@@ -680,26 +677,21 @@ class CoinTransactionLog(models.Model):
         ('sell', 'Sell'),
     ]
     
-    # Reference to transaction
     transaction = models.ForeignKey(CoinTransaction, on_delete=models.SET_NULL, null=True, blank=True, related_name='logs')
     
-    # User information
     customer_name = models.CharField(max_length=200, blank=True, null=True)
     customer_email = models.EmailField(blank=True, null=True)
     
-    # Transaction details
     transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
     coin_amount = models.DecimalField(max_digits=20, decimal_places=8, blank=True, null=True)
     usd_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     rate = models.DecimalField(max_digits=10, decimal_places=6, blank=True, null=True)
     
-    # Status and notes
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     action = models.CharField(max_length=100, help_text="Action performed, e.g., 'Buy Approved', 'Sell Processed'")
     performed_by = models.CharField(max_length=100, blank=True, null=True, help_text="Who performed the action (admin username)")
     notes = models.TextField(blank=True, null=True)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -760,36 +752,11 @@ class TradingStrategy(models.Model):
         ('vip', 'VIP'),
     ]
     
-    market_type = models.CharField(
-        max_length=20, 
-        choices=MARKET_TYPES, 
-        default='all',
-        help_text="Which market this strategy is designed for"
-    )
-    
-    difficulty_level = models.CharField(
-        max_length=20,
-        choices=DIFFICULTY_LEVELS,
-        default='all',
-        help_text="Experience level required for this strategy"
-    )
-    
-    strategy_type = models.CharField(
-        max_length=20,
-        choices=STRATEGY_TYPES,
-        default='free',
-        help_text="Free, Premium, or VIP strategy"
-    )
-    
-    is_featured = models.BooleanField(
-        default=False,
-        help_text="Featured strategies appear first"
-    )
-    
-    view_count = models.PositiveIntegerField(
-        default=0,
-        help_text="Number of times this strategy was viewed"
-    )
+    market_type = models.CharField(max_length=20, choices=MARKET_TYPES, default='all')
+    difficulty_level = models.CharField(max_length=20, choices=DIFFICULTY_LEVELS, default='all')
+    strategy_type = models.CharField(max_length=20, choices=STRATEGY_TYPES, default='free')
+    is_featured = models.BooleanField(default=False)
+    view_count = models.PositiveIntegerField(default=0)
     
     class Meta:
         verbose_name_plural = "Trading Strategies"
@@ -816,29 +783,10 @@ class TradingSignal(models.Model):
         ('all', 'All Markets'),
     ]
     
-    signal_type = models.CharField(
-        max_length=20,
-        choices=SIGNAL_TYPES,
-        default='forex',
-        help_text="Type of trading signals"
-    )
-    
-    accuracy_forex = models.PositiveIntegerField(
-        default=80,
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
-        help_text="Forex accuracy percentage (0-100)"
-    )
-    
-    accuracy_crypto = models.PositiveIntegerField(
-        default=75,
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
-        help_text="Crypto accuracy percentage (0-100)"
-    )
-    
-    is_featured = models.BooleanField(
-        default=False,
-        help_text="Featured signals appear first"
-    )
+    signal_type = models.CharField(max_length=20, choices=SIGNAL_TYPES, default='forex')
+    accuracy_forex = models.PositiveIntegerField(default=80, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    accuracy_crypto = models.PositiveIntegerField(default=75, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    is_featured = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
@@ -1063,11 +1011,7 @@ class Affiliate(models.Model):
         }
 
     def can_request_payout(self, coin_amount):
-        return (
-            self.coin_balance >= coin_amount and 
-            coin_amount >= 50 and
-            self.is_active
-        )
+        return self.coin_balance >= coin_amount and coin_amount >= 50 and self.is_active
 
     def request_payout(self, coin_amount, payment_method, **payment_details):
         if not self.can_request_payout(coin_amount):
@@ -1249,8 +1193,6 @@ class WeeklyNumber(models.Model):
         return cls.objects.filter(is_active=True).first()
     
 
-
-# In models.py
 class ReferralCoinSetting(models.Model):
     """Simple model to store referral coin amount"""
     coins_per_referral = models.IntegerField(default=50)
@@ -1265,10 +1207,8 @@ class ReferralCoinSetting(models.Model):
     
     @classmethod
     def get_coins_amount(cls):
-        """Get current coins per referral"""
         setting = cls.objects.first()
         if not setting:
-            # Create default if doesn't exist
             setting = cls.objects.create()
         return setting.coins_per_referral
         

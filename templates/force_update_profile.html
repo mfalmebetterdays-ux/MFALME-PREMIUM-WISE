@@ -1,0 +1,210 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Your Profile - TradeWise</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 40px 0;
+        }
+        
+        .update-container {
+            max-width: 550px;
+            margin: 0 auto;
+        }
+        
+        .update-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .card-header h2 {
+            margin: 0;
+            font-weight: 700;
+        }
+        
+        .card-header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
+        
+        .card-body {
+            padding: 30px;
+        }
+        
+        .warning-badge {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .form-group label i {
+            margin-right: 8px;
+            color: #3498db;
+        }
+        
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            padding: 12px 15px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            outline: none;
+        }
+        
+        .btn-update {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-update:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(52, 152, 219, 0.3);
+        }
+        
+        .info-text {
+            background: #e8f4fd;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #2c3e50;
+            margin-top: 20px;
+        }
+        
+        .password-requirements {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container update-container">
+        <div class="update-card">
+            <div class="card-header">
+                <i class="fas fa-user-edit" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                <h2>Complete Your Profile</h2>
+                <p>Please update your information to continue</p>
+            </div>
+            
+            <div class="card-body">
+                <div class="warning-badge">
+                    <i class="fas fa-exclamation-triangle" style="color: #ffc107; margin-right: 10px;"></i>
+                    <strong>Action Required:</strong> Your profile needs to be updated before you can access your account.
+                </div>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <!-- User Info Display -->
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Name</label>
+                        <input type="text" class="form-control" value="{{ user.first_name }} {{ user.second_name }}" disabled style="background: #f8f9fa;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" class="form-control" value="{{ user.email }}" disabled style="background: #f8f9fa;">
+                    </div>
+                    
+                    <!-- Phone Number - REQUIRED -->
+                    <div class="form-group">
+                        <label><i class="fas fa-phone-alt"></i> Phone Number <span style="color: #e74c3c;">*</span></label>
+                        <input type="tel" class="form-control" id="phone" name="phone" 
+                               placeholder="e.g., 254712345678" value="{{ user.phone|default:'' }}" required>
+                        <small class="text-muted">Enter your phone number (e.g., 254712345678)</small>
+                    </div>
+                    
+                    <!-- Optional Password Change -->
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> New Password (Optional)</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password" 
+                               placeholder="Leave blank to keep current password">
+                        <div class="password-requirements">
+                            <i class="fas fa-info-circle"></i> Minimum 6 characters. Strongly recommended!
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                               placeholder="Confirm your new password">
+                    </div>
+                    
+                    <button type="submit" class="btn-update">
+                        <i class="fas fa-save me-2"></i> Update Profile & Continue
+                    </button>
+                    
+                    <div class="info-text">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        <strong>Why is this required?</strong><br>
+                        As part of our security upgrade, we need to verify your contact information. 
+                        This ensures you can receive important account notifications and password reset links.
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Password match validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const newPass = document.getElementById('new_password').value;
+            const confirmPass = document.getElementById('confirm_password').value;
+            
+            if (newPass && newPass !== confirmPass) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                return false;
+            }
+            
+            if (newPass && newPass.length < 6) {
+                e.preventDefault();
+                alert('Password must be at least 6 characters long!');
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

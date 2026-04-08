@@ -23,7 +23,7 @@ import random
 import secrets  # ADD THIS IMPORT
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.files.storage import FileSystemStorage
-
+from django.contrib.auth.hashers import check_password, make_password
 from decimal import Decimal
 
 # Import ALL models and services - ORGANIZED
@@ -2549,7 +2549,7 @@ def explore(request):
     return render(request, 'explore.html')
 
 def login_view(request):
-    """User login view - WITH EMAIL VERIFICATION CHECK & DEBUGGING"""
+    """User login view - EMAIL VERIFICATION IS OPTIONAL (no warning)"""
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
@@ -2564,15 +2564,9 @@ def login_view(request):
             if user.check_password(password):
                 print(f"✅ LOGIN: Password correct")
                 
-                # ✅ CHECK IF EMAIL IS VERIFIED
+                # ✅ NO VERIFICATION CHECK AT ALL - Just log and continue
                 if not user.is_email_verified:
-                    print(f"❌ LOGIN: Email not verified for {email}")
-                    messages.error(request, 
-                        '❌ Please verify your email before logging in. '
-                        'Check your inbox for the verification link. '
-                        'If you didn\'t receive it, check your spam folder or contact support.'
-                    )
-                    return render(request, 'login.html')
+                    print(f"⚠️ LOGIN: Email not verified for {email} - Allowing login (no warning)")
                 
                 # Check if account is active
                 if user.is_active:
@@ -2588,7 +2582,7 @@ def login_view(request):
                     print(f"📊 LOGIN: Session data - {dict(request.session)}")
                     
                     messages.success(request, f'🎉 Welcome back, {user.first_name}!')
-                    return redirect('account')  # ✅ Redirect to account page
+                    return redirect('account')
                 else:
                     print(f"❌ LOGIN: Account inactive for {email}")
                     messages.error(request, 'Your account is inactive. Please contact support.')
@@ -2603,7 +2597,6 @@ def login_view(request):
             print(f"❌ LOGIN: Unexpected error - {str(e)}")
             messages.error(request, 'Login failed. Please try again.')
     
-    # If GET request or login failed, show login page
     print(f"🔵 LOGIN: Rendering login page")
     return render(request, 'login.html')
 
@@ -5206,30 +5199,35 @@ def handler500(request):
 # ================== ADDITIONAL UTILITY FUNCTIONS ==================
 
 def send_welcome_email(self, password):
-    """Send welcome email to new user - UPDATED WITH DEBUGGING"""
+    """Send welcome email to new user - UPDATED WITH PHONE NUMBER"""
     try:
         print(f"🟢 WELCOME EMAIL: Starting for {self.email}")
         print(f"📧 Welcome email details:")
         print(f"   - User: {self.first_name} {self.second_name}")
         print(f"   - Account: {self.account_number}")
+        print(f"   - Phone: {self.phone}")  # ✅ DEBUG: Check if phone exists
         print(f"   - Password: {password}")
         print(f"   - Template: welcome_email.html")
         
         subject = '🎉 Welcome to TradeWise - Your Trading Journey Begins!'
         
-        # Render HTML template with ALL required context variables
+        # Render HTML template with ALL required context variables INCLUDING PHONE
         try:
             html_message = render_to_string('emails/welcome_email.html', {
                 'user': self,
-                'plain_password': password,  # ✅ Changed to match template variable name
+                'plain_password': password,
+                'user_phone': self.phone,  # ✅ ADD PHONE NUMBER TO CONTEXT
+                'phone': self.phone,  # ✅ ALSO ADD AS 'phone' for flexibility
             })
             print(f"✅ WELCOME EMAIL: Template rendered successfully")
+            print(f"📞 Phone number in context: {self.phone}")
         except Exception as e:
             print(f"❌ WELCOME EMAIL: Template error: {e}")
             html_message = f"""
             <h2>Welcome to TradeWise!</h2>
             <p>Hello {self.first_name}, your account was created successfully!</p>
             <p>Account Number: {self.account_number}</p>
+            <p>Phone Number: {self.phone}</p>
             <p>Temporary Password: {password}</p>
             """
         
@@ -5242,6 +5240,7 @@ Account Information:
 - Name: {self.first_name} {self.second_name}
 - TradeWise Number: {self.account_number}
 - Email: {self.email}
+- Phone Number: {self.phone}
 - Temporary Password: {password}
 
 Please log in and change your password immediately for security.
@@ -5786,8 +5785,9 @@ def create_emergency_merchandise():
         
     except Exception as e:
         return f"Error: {str(e)}"
+    
 def account(request):
-    """User account dashboard - COMPLETE FIXED VERSION"""
+    """User account dashboard - COMPLETE FIXED VERSION WITH CORRECT REFERRAL LINK"""
     user_id = request.session.get('user_id')
     if not user_id:
         messages.error(request, 'Please log in to access your account.')
@@ -5800,18 +5800,25 @@ def account(request):
         affiliate, created = Affiliate.objects.get_or_create(user=user)
         if created:
             print(f"✅ AUTO-CREATED AFFILIATE IN ACCOUNT: {user.email}")
+            print(f"📝 REFERRAL CODE GENERATED: {affiliate.referral_code}")
         
-        # ✅ THESE WILL WORK NOW WITH PROPER IMPORTS:
-        # 1. Current weekly number
+        # ✅ CORRECT REFERRAL LINK CONSTRUCTION - FIXED
+        # Generate the referral link correctly - NO DOUBLE SLASH!
+        base_url = "https://www.tradewise-hub.com"
+        referral_link = f"{base_url}/signup/?ref={affiliate.referral_code}"
+        
+        print(f"🔗 REFERRAL LINK: {referral_link}")
+        
+        # Current weekly number
         current_weekly_number = WeeklyNumber.get_current_number()
         
-        # 2. Recent referrals (last 5) - THIS WAS FAILING!
+        # Recent referrals (last 5)
         recent_referrals = Referral.objects.filter(affiliate=affiliate).select_related('referred_user').order_by('-created_at')[:5]
         
-        # 3. Payout history - THIS WAS FAILING!
+        # Payout history
         payout_history = PayoutRequest.objects.filter(user=user).order_by('-created_at')[:5]
         
-        # 4. Referral stats
+        # Referral stats
         referral_stats = {
             'total_referrals': affiliate.total_referrals,
             'total_coins': affiliate.total_coins_earned,
@@ -5823,6 +5830,9 @@ def account(request):
         
         # ✅ DEBUG: Check what data we have
         print(f"🔍 ACCOUNT VIEW DEBUG for {user.email}:")
+        print(f"   Affiliate ID: {affiliate.id}")
+        print(f"   Referral Code: {affiliate.referral_code}")
+        print(f"   Referral Link: {referral_link}")
         print(f"   Affiliate Balance: {affiliate.coin_balance}")
         print(f"   Total Referrals: {affiliate.total_referrals}")
         print(f"   Recent Referrals Count: {recent_referrals.count()}")
@@ -5834,7 +5844,8 @@ def account(request):
             'second_name': user.second_name,
             'account_number': user.account_number,
             'user_id': user.id,
-            'referral_code': affiliate.referral_code,
+            'referral_code': affiliate.referral_code,  # Keep for reference
+            'referral_link': referral_link,  # ✅ ADD THIS TO CONTEXT
             'referral_stats': referral_stats,
             'cash_value': cash_value,
             'balance': referral_stats['coin_balance'],
@@ -5851,7 +5862,7 @@ def account(request):
     except Exception as e:
         print(f"❌ Account view error: {str(e)}")
         import traceback
-        traceback.print_exc()  # This will show exactly where it's breaking
+        traceback.print_exc()
         messages.error(request, 'An error occurred while loading your account.')
         return redirect('index')
     
@@ -7987,3 +7998,77 @@ def ajax_users_data(request):
             })
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+def force_profile_update(request):
+    """ONE-TIME profile update for users without phone numbers or with temporary password"""
+    
+    # Check if user is logged in
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, 'Please log in to continue.')
+        return redirect('login_view')
+    
+    try:
+        user = Tradeviewusers.objects.get(id=user_id)
+    except Tradeviewusers.DoesNotExist:
+        messages.error(request, 'User not found.')
+        return redirect('login_view')
+    
+    # CHECK IF USER STILL NEEDS TO UPDATE
+    from django.contrib.auth.hashers import check_password
+    is_temp_password = check_password('ResetMe@2025', user.password)
+    
+    # If user already has phone AND password is NOT temporary, they are GOOD - send to account
+    if user.phone and user.phone.strip() != '' and not is_temp_password:
+        print(f"✅ User {user.email} already has phone and normal password - skipping update")
+        return redirect('account')
+    
+    if request.method == 'POST':
+        # Get form data
+        phone = request.POST.get('phone', '').strip()
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        
+        # Validate phone number
+        if not phone:
+            messages.error(request, 'Phone number is required.')
+            return render(request, 'force_update_profile.html', {'user': user})
+        
+        # Update phone number
+        user.phone = phone
+        user.save()
+        print(f"✅ Updated phone for {user.email}: {phone}")
+        
+        # Update password if provided
+        if new_password:
+            if new_password != confirm_password:
+                messages.error(request, 'Passwords do not match.')
+                return render(request, 'force_update_profile.html', {'user': user})
+            
+            if len(new_password) < 6:
+                messages.error(request, 'Password must be at least 6 characters.')
+                return render(request, 'force_update_profile.html', {'user': user})
+            
+            # Update password
+            user.password = make_password(new_password)
+            user.save()
+            print(f"✅ Updated password for {user.email}")
+            messages.success(request, 'Your password has been updated successfully!')
+        else:
+            # If they didn't change password but had temp password, keep it? NO - force change
+            if is_temp_password:
+                messages.error(request, 'You must change your temporary password to continue.')
+                return render(request, 'force_update_profile.html', {'user': user})
+            messages.success(request, 'Your phone number has been updated!')
+        
+        # Mark email as verified
+        if not user.is_email_verified:
+            user.is_email_verified = True
+            user.save()
+        
+        messages.success(request, '✅ Profile updated successfully! Welcome to TradeWise!')
+        return redirect('account')
+    
+    # GET request - show the update form (ONLY for users who need it)
+    return render(request, 'force_update_profile.html', {'user': user})

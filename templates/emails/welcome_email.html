@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to TradeWise!</title>
+    <!-- Font Awesome 6 (Free CDN for real icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -32,12 +34,14 @@
         .welcome-icon {
             font-size: 60px;
             margin-bottom: 20px;
+            display: inline-block;
         }
         
         .logo {
             font-size: 36px;
             font-weight: bold;
             margin-bottom: 10px;
+            letter-spacing: 1px;
         }
         
         .email-content {
@@ -70,6 +74,28 @@
             background: white;
             border-radius: 8px;
             border-left: 4px solid #3498db;
+            align-items: center;
+        }
+        
+        .credential-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .credential-label i {
+            width: 22px;
+            color: #3498db;
+            font-size: 1.1rem;
+        }
+        
+        .credential-value {
+            font-weight: 600;
+            color: #2c3e50;
+            word-break: break-word;
+            text-align: right;
         }
         
         .cta-buttons {
@@ -80,7 +106,10 @@
         }
         
         .cta-button {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
             padding: 15px;
             text-align: center;
             border-radius: 10px;
@@ -88,9 +117,6 @@
             color: white;
             font-weight: bold;
             transition: all 0.3s ease;
-        }
-        
-        .cta-primary {
             background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
         }
         
@@ -125,15 +151,9 @@
         }
         
         .feature-icon {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-        
-        .email-footer {
-            background: #2c3e50;
-            color: white;
-            padding: 30px;
-            text-align: center;
+            font-size: 28px;
+            margin-bottom: 12px;
+            color: #3498db;
         }
         
         .security-note {
@@ -144,14 +164,59 @@
             text-align: center;
             margin: 20px 0;
             color: #8e6c0c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .email-footer {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .footer-link {
+            color: #fff;
+            margin: 0 10px;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        
+        .footer-link:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 500px) {
+            .credential-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .credential-value {
+                text-align: left;
+                width: 100%;
+            }
+            .cta-buttons {
+                grid-template-columns: 1fr;
+            }
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="email-container">
-        <!-- Header -->
+        <!-- Header with Rocket Icon -->
         <div class="email-header">
-            <div class="welcome-icon">🚀</div>
+            <div class="welcome-icon">
+                <i class="fas fa-rocket"></i>
+            </div>
             <div class="logo">TRADEWISE</div>
             <div style="opacity: 0.9; font-size: 18px;">Your Trading Journey Starts Now!</div>
         </div>
@@ -159,103 +224,139 @@
         <!-- Content -->
         <div class="email-content">
             <div class="success-badge">
+                <i class="fas fa-check-circle" style="margin-right: 8px; color: #27ae60;"></i> 
                 <strong>Account Created Successfully!</strong> You're now part of the TradeWise family.
             </div>
             
-            <h2 style="color: #2c3e50; text-align: center; margin-bottom: 20px;">
-                Welcome, {{ user.first_name }}! 🎉
+            <h2 style="color: #2c3e50; text-align: center; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <i class="fas fa-hand-peace" style="color: #3498db;"></i> 
+                Welcome, {{ user.first_name }}!
             </h2>
             
             <p style="text-align: center; color: #64748b; margin-bottom: 30px; line-height: 1.6;">
+                <i class="fas fa-chart-line" style="margin-right: 4px;"></i> 
                 Get ready to transform your trading experience with cutting-edge tools, 
                 expert signals, and a community of successful traders.
             </p>
             
-            <!-- Credentials Box -->
+            <!-- Credentials Box (includes phone number - FIXED VARIABLE NAME) -->
             <div class="credentials-box">
-                <h3 style="color: #2c3e50; margin-bottom: 20px; text-align: center;">
-                    📋 Your Account Credentials
+                <h3 style="color: #2c3e50; margin-bottom: 20px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-id-card"></i> Your Account Credentials
                 </h3>
                 
                 <div class="credential-item">
-                    <span style="color: #64748b;">TradeWise Number:</span>
-                    <strong style="color: #3498db;">{{ user.account_number }}</strong>
+                    <div class="credential-label">
+                        <i class="fas fa-hashtag"></i> <span>TradeWise Number:</span>
+                    </div>
+                    <div class="credential-value">{{ user.account_number }}</div>
                 </div>
                 <div class="credential-item">
-                    <span style="color: #64748b;">Name:</span>
-                    <strong style="color: #2c3e50;">{{ user.first_name }} {{ user.second_name }}</strong>
+                    <div class="credential-label">
+                        <i class="fas fa-user-circle"></i> <span>Full Name:</span>
+                    </div>
+                    <div class="credential-value">{{ user.first_name }} {{ user.second_name }}</div>
                 </div>
                 <div class="credential-item">
-                    <span style="color: #64748b;">Email:</span>
-                    <strong style="color: #2c3e50;">{{ user.email }}</strong>
+                    <div class="credential-label">
+                        <i class="fas fa-envelope"></i> <span>Email:</span>
+                    </div>
+                    <div class="credential-value">{{ user.email }}</div>
+                </div>
+                <!-- Phone Number - FIXED: Using correct variable name 'user_phone' -->
+                <div class="credential-item">
+                    <div class="credential-label">
+                        <i class="fas fa-phone-alt"></i> <span>Phone Number:</span>
+                    </div>
+                    <div class="credential-value">{{ user_phone|default:user.phone|default:"Not provided" }}</div>
                 </div>
                 <div class="credential-item">
-                    <span style="color: #64748b;">Password:</span>
-                    <strong style="color: #e74c3c;">{{ plain_password }}</strong>
+                    <div class="credential-label">
+                        <i class="fas fa-lock"></i> <span>Password:</span>
+                    </div>
+                    <div class="credential-value">{{ plain_password }}</div>
                 </div>
             </div>
             
-            <!-- CTA Buttons -->
+            <!-- CTA Buttons using MAIN TRADEWISE DOMAIN -->
             <div class="cta-buttons">
-                <a href="http://127.0.0.1:8000/loginpage/" class="cta-button cta-primary" style="color: #f8f9fa;">
-                    📈 Login to Dashboard
+                <a href="https://tradewise-hub.com/login/" class="cta-button cta-primary" style="color: #f8f9fa;">
+                    <i class="fas fa-sign-in-alt"></i> Login to Dashboard
                 </a>
-                <a href="http://127.0.0.1:8000/market/" class="cta-button cta-secondary" style="color: #f8f9fa;">
-                    💼 Explore Services
+                <a href="https://tradewise-hub.com/market/" class="cta-button cta-secondary" style="color: #f8f9fa;">
+                    <i class="fas fa-chart-simple"></i> Explore Services
                 </a>
             </div>
             
-            <!-- Features Grid -->
-            <h3 style="color: #2c3e50; text-align: center; margin: 30px 0 20px 0;">
-                What Awaits You:
+            <!-- Features Grid with real icons -->
+            <h3 style="color: #2c3e50; text-align: center; margin: 30px 0 20px 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fas fa-gem"></i> What Awaits You:
             </h3>
             
             <div class="features-grid">
                 <div class="feature-item">
-                    <div class="feature-icon">📊</div>
+                    <div class="feature-icon"><i class="fas fa-bullhorn"></i></div>
                     <strong style="color: #2c3e50;">Live Trading Signals</strong>
                     <p style="font-size: 12px; margin-top: 5px; color: #64748b;">Accurate forex & crypto signals</p>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">🎓</div>
+                    <div class="feature-icon"><i class="fas fa-chalkboard-user"></i></div>
                     <strong style="color: #2c3e50;">Expert Coaching</strong>
                     <p style="font-size: 12px; margin-top: 5px; color: #64748b;">Learn from pro traders</p>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">🤝</div>
+                    <div class="feature-icon"><i class="fas fa-handshake"></i></div>
                     <strong style="color: #2c3e50;">Affiliate Program</strong>
                     <p style="font-size: 12px; margin-top: 5px; color: #64748b;">Earn while you learn</p>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">💎</div>
+                    <div class="feature-icon"><i class="fas fa-chart-pie"></i></div>
                     <strong style="color: #2c3e50;">Premium Tools</strong>
                     <p style="font-size: 12px; margin-top: 5px; color: #64748b;">Advanced trading software</p>
                 </div>
             </div>
             
-            <!-- Security Note -->
+            <!-- Security Note with lock icon -->
             <div class="security-note">
-                🔒 <strong>Keep Your Credentials Safe:</strong> Never share your password with anyone.
+                <i class="fas fa-shield-alt" style="font-size: 18px;"></i> 
+                <strong>Keep Your Credentials Safe:</strong> Never share your password with anyone.
+                <i class="fas fa-eye-slash" style="margin-left: 6px;"></i>
+            </div>
+            
+            <!-- Help & Support Section -->
+            <div style="margin-top: 30px; padding: 20px; background: #f0f8ff; border-radius: 10px; text-align: center;">
+                <p style="margin-bottom: 10px; color: #2c3e50;">
+                    <i class="fas fa-headset" style="color: #3498db; margin-right: 8px;"></i>
+                    <strong>Need Help?</strong>
+                </p>
+                <p style="font-size: 13px; color: #64748b;">
+                    Contact our support team at <a href="mailto:support@tradewise-hub.com" style="color: #3498db; text-decoration: none;">support@tradewise-hub.com</a>
+                </p>
             </div>
         </div>
         
-        <!-- Footer -->
+        <!-- Footer: dynamic year auto-updates -->
         <div class="email-footer">
             <p style="margin-bottom: 20px; font-size: 16px;">
                 Ready to start your trading journey? 
-                <a href="http://127.0.0.1:8000/loginpage/" style="color: #3498db; text-decoration: none; font-weight: bold;">
-                    Login Now →
+                <a href="https://tradewise-hub.com/login/" style="color: #3498db; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 6px;">
+                    Login Now <i class="fas fa-arrow-right"></i>
                 </a>
             </p>
             <div style="margin: 20px 0;">
-                <a href="#" style="color: #fff; margin: 0 10px; text-decoration: none; opacity: 0.8;">Help Center</a> • 
-                <a href="#" style="color: #fff; margin: 0 10px; text-decoration: none; opacity: 0.8;">Contact Support</a> • 
-                <a href="#" style="color: #fff; margin: 0 10px; text-decoration: none; opacity: 0.8;">Privacy Policy</a>
+                <a href="https://tradewise-hub.com/help/" class="footer-link"><i class="fas fa-life-ring"></i> Help Center</a> • 
+                <a href="https://tradewise-hub.com/support/" class="footer-link"><i class="fas fa-headset"></i> Contact Support</a> • 
+                <a href="https://tradewise-hub.com/privacy/" class="footer-link"><i class="fas fa-lock"></i> Privacy Policy</a>
             </div>
             <p style="font-size: 12px; opacity: 0.7; margin-top: 20px;">
-                © 2025 TradeWise. Transforming Trading, Empowering Traders Worldwide.
+                <i class="far fa-copyright"></i> <span id="currentYear"></span> TradeWise. Transforming Trading, Empowering Traders Worldwide.
             </p>
         </div>
     </div>
+
+    <!-- Auto-update year script -->
+    <script>
+        document.getElementById('currentYear').innerText = new Date().getFullYear();
+    </script>
 </body>
 </html>
