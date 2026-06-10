@@ -8,6 +8,7 @@ import sys
 import django
 import smtplib
 from email.mime.text import MIMEText
+import time
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dict.settings')
@@ -117,6 +118,9 @@ for i, user in enumerate(users_without_phone, 1):
         failed += 1
         failed_emails.append(user.email)
         print("❌ Failed")
+    
+    # Small delay to avoid rate limiting
+    time.sleep(0.5)
 
 # ================= RESULTS =================
 print("\n" + "=" * 70)
