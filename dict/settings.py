@@ -133,9 +133,8 @@ class IPWhitelistMiddleware:
     # Add your trusted IPs here (admin IPs)
     TRUSTED_IPS = [
         '127.0.0.1',  # Local
-        # Add your home/office IP addresses here
-        # '102.0.0.1',  # Example: Your office IP
-        # '105.0.0.1',  # Example: Your home IP
+        # Add your actual IP address here - find it at https://whatismyipaddress.com/
+        # '102.0.0.1',  # Uncomment and replace with your actual IP
     ]
     
     def __init__(self, get_response):
@@ -144,14 +143,18 @@ class IPWhitelistMiddleware:
     def __call__(self, request):
         from django.http import HttpResponseForbidden
         
+        # TEMPORARILY DISABLED FOR ADMIN ACCESS
+        # Uncomment the lines below to re-enable IP whitelisting
+        """
         # Only restrict admin and django admin panels in production
-        if IS_PRODUCTION and (request.path.startswith('/admin/') or request.path.startswith('/dashboard/')):
+        if IS_PRODUCTION and (request.path.startswith('/admin/') or request.path.startswith('/dashboard/') or request.path.startswith('/admin-login/')):
             client_ip = self.get_client_ip(request)
             
             # Check if IP is whitelisted
             if client_ip not in self.TRUSTED_IPS:
                 print(f"🔴 BLOCKED Unauthorized admin access from IP: {client_ip}")
-                return HttpResponseForbidden("Admin access restricted")
+                return HttpResponseForbidden("Admin access restricted - IP not whitelisted")
+        """
         
         return self.get_response(request)
     
@@ -222,7 +225,7 @@ class RateLimitMiddleware:
         path = request.path
         
         # Different rate limits for different endpoints
-        if path.startswith('/admin/'):
+        if path.startswith('/admin/') or path.startswith('/admin-login/'):
             limit = 30  # 30 requests per minute for admin
         elif path.startswith('/login/') or path.startswith('/signup/'):
             limit = 10  # 10 login attempts per minute
@@ -364,7 +367,7 @@ MIDDLEWARE = [
     "dict.settings.BlockMaliciousBotsMiddleware",
     "dict.settings.SQLInjectionBlocker",
     "dict.settings.RateLimitMiddleware",
-    "dict.settings.IPWhitelistMiddleware",
+    "dict.settings.IPWhitelistMiddleware",  # Currently disabled inside the class
 ]
 
 # ==============================
@@ -663,24 +666,6 @@ else:
     }
 
 # ==============================
-# ROBOTS.TXT HANDLING
-# ==============================
-# Create a simple robots.txt view if file doesn't exist
-def robots_txt_view(request):
-    from django.http import HttpResponse
-    lines = [
-        "User-agent: *",
-        "Disallow: /admin/",
-        "Disallow: /dashboard/",
-        "Allow: /",
-        "Sitemap: https://tradewise.up.railway.app/sitemap.xml"
-    ]
-    return HttpResponse("\n".join(lines), content_type="text/plain")
-
-# Add robots.txt URL pattern (will be in urls.py)
-# In your urls.py, add: path('robots.txt', lambda request: HttpResponse(...))
-
-# ==============================
 # FINAL SETTINGS SUMMARY
 # ==============================
 print("=" * 50)
@@ -692,4 +677,5 @@ print(f"📦 STATIC FILES: {STATICFILES_STORAGE}")
 print(f"🛡️  Security Middleware: {'ENABLED' if IS_PRODUCTION else 'PARTIALLY ENABLED'}")
 print(f"🔐 Session Security: {'ENABLED' if IS_PRODUCTION else 'ENABLED'}")
 print(f"🚦 Rate Limiting: {'ENABLED' if IS_PRODUCTION else 'DISABLED'}")
+print("⚠️  IP Whitelist: TEMPORARILY DISABLED for admin access")
 print("=" * 50)
