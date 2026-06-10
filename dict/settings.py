@@ -66,9 +66,6 @@ CSRF_TRUSTED_ORIGINS = [
 # SECURITY MIDDLEWARE (Import paths)
 # ==============================
 
-# We will define the middleware classes below to avoid import issues
-# This keeps everything in one file for simplicity
-
 class SecurityHeadersMiddleware:
     """Add comprehensive security headers to all responses"""
     
@@ -264,8 +261,8 @@ class SessionSecurityMiddleware:
         from django.http import JsonResponse
         from django.contrib.auth import logout
         
-        # Check if session is valid (only for authenticated users)
-        if request.user.is_authenticated:
+        # FIXED: Check if user attribute exists before accessing
+        if hasattr(request, 'user') and request.user.is_authenticated:
             # Check if IP changed
             current_ip = self.get_client_ip(request)
             session_ip = request.session.get('ip_address')
@@ -339,31 +336,32 @@ class BlockSuspiciousPathsMiddleware:
         
         return self.get_response(request)
 
+
 # ==============================
-# MIDDLEWARE CONFIGURATION
+# MIDDLEWARE CONFIGURATION - FIXED ORDER!
 # ==============================
+# IMPORTANT: AuthenticationMiddleware MUST be placed BEFORE custom 
+# middleware that accesses request.user
 
 MIDDLEWARE = [
-    # Security middleware (run first)
+    # Django core middleware (must come first)
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",  # Required for auth
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",  # CRITICAL: Adds user to request
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    
+    # Custom security middleware (now after AuthenticationMiddleware)
+    "dict.settings.SessionSecurityMiddleware",  # Now has access to request.user
     "dict.settings.BlockSuspiciousPathsMiddleware",
     "dict.settings.SecurityHeadersMiddleware",
     "dict.settings.BlockMaliciousBotsMiddleware",
     "dict.settings.SQLInjectionBlocker",
     "dict.settings.RateLimitMiddleware",
-    "dict.settings.SessionSecurityMiddleware",
-    
-    # Production security block (if in production)
     "dict.settings.IPWhitelistMiddleware",
-    
-    # Django default middleware
-    "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 # ==============================
@@ -660,6 +658,12 @@ else:
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
         }
     }
+
+# ==============================
+# ROBOTS.TXT HANDLING
+# ==============================
+# Fix for robots.txt - Add a simple view if needed
+ROBOTS_TXT_PATH = os.path.join(BASE_DIR, 'static', 'robots.txt')
 
 # ==============================
 # FINAL SETTINGS SUMMARY
