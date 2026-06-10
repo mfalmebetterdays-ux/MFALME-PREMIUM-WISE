@@ -63,7 +63,7 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # ==============================
-# SECURITY MIDDLEWARE (Import paths)
+# SECURITY MIDDLEWARE (Fixed)
 # ==============================
 
 class SecurityHeadersMiddleware:
@@ -252,7 +252,7 @@ class RateLimitMiddleware:
 
 
 class SessionSecurityMiddleware:
-    """Enhance session security"""
+    """Enhance session security - FIXED: Added hasattr check"""
     
     def __init__(self, get_response):
         self.get_response = get_response
@@ -261,7 +261,8 @@ class SessionSecurityMiddleware:
         from django.http import JsonResponse
         from django.contrib.auth import logout
         
-        # FIXED: Check if user attribute exists before accessing
+        # CRITICAL FIX: Check if user attribute exists before accessing
+        # This prevents AttributeError when authentication middleware hasn't run yet
         if hasattr(request, 'user') and request.user.is_authenticated:
             # Check if IP changed
             current_ip = self.get_client_ip(request)
@@ -338,15 +339,17 @@ class BlockSuspiciousPathsMiddleware:
 
 
 # ==============================
-# MIDDLEWARE CONFIGURATION - FIXED ORDER!
+# MIDDLEWARE CONFIGURATION - CRITICAL FIXED ORDER!
 # ==============================
-# IMPORTANT: AuthenticationMiddleware MUST be placed BEFORE custom 
-# middleware that accesses request.user
+# IMPORTANT: Django's auth middleware MUST run before any custom middleware 
+# that accesses request.user
 
 MIDDLEWARE = [
-    # Django core middleware (must come first)
+    # Django core middleware (must come first in this order)
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    
+    # Session and auth middleware - these add user attribute to request
     "django.contrib.sessions.middleware.SessionMiddleware",  # Required for auth
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -354,8 +357,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     
-    # Custom security middleware (now after AuthenticationMiddleware)
-    "dict.settings.SessionSecurityMiddleware",  # Now has access to request.user
+    # Custom security middleware (now safe to access request.user)
+    "dict.settings.SessionSecurityMiddleware",  # Now has request.user available
     "dict.settings.BlockSuspiciousPathsMiddleware",
     "dict.settings.SecurityHeadersMiddleware",
     "dict.settings.BlockMaliciousBotsMiddleware",
@@ -662,8 +665,20 @@ else:
 # ==============================
 # ROBOTS.TXT HANDLING
 # ==============================
-# Fix for robots.txt - Add a simple view if needed
-ROBOTS_TXT_PATH = os.path.join(BASE_DIR, 'static', 'robots.txt')
+# Create a simple robots.txt view if file doesn't exist
+def robots_txt_view(request):
+    from django.http import HttpResponse
+    lines = [
+        "User-agent: *",
+        "Disallow: /admin/",
+        "Disallow: /dashboard/",
+        "Allow: /",
+        "Sitemap: https://tradewise.up.railway.app/sitemap.xml"
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
+
+# Add robots.txt URL pattern (will be in urls.py)
+# In your urls.py, add: path('robots.txt', lambda request: HttpResponse(...))
 
 # ==============================
 # FINAL SETTINGS SUMMARY
